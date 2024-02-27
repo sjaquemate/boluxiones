@@ -58,18 +58,26 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
+          wave: {
+            '0%': { transform: 'scale(0.8)' },
+            '50%': { transform: 'scale(1.2)' },
+            '100%': { transform: 'scale(1)' },
+          },
+          correct: {
+            // '0%': { transform: 'translateX(0px)' },
+            '50%': { transform: 'translateY(-5%)' },
+            // '100%': { transform: 'translateX(10px)' },
+          },
+          wrong: {
+            
+            '25%': { transform: 'translateX(-4%)' },
+            '75%': { transform: 'translateX(4%)' },
+          }
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        'scale-big-normal': 'wave 200ms ease-in-out',
+        'bounce-correct': 'correct 500ms ease-in-out',
+        'bounce-wrong': 'wrong 300ms linear',
       },
     },
   },
