@@ -1,5 +1,5 @@
 import { twMerge } from 'tailwind-merge';
-import { InformationCircleIcon } from '@heroicons/react/outline';
+// import { InformationCircleIcon } from '@heroicons/react/outline';
 import { useEffect, useRef, useState } from 'react';
 import { shuffleSubsetInplace } from './arrayUtil';
 import { SolutionRow } from './components/SolutionRow';
@@ -7,6 +7,7 @@ import Mate from './assets/mate.png'
 import tango2 from './assets/tango2.jpg'
 import { useDelay } from './hooks';
 import { Grouping, emptyGrouping, useGroupings } from './words';
+import InfoDialog from './InfoDialog';
 
 const orderedPositions = createOrderedPositions()
 
@@ -437,6 +438,7 @@ export default function App() {
   }
   return (
     <div className="h-screen w-screen flex flex-col">
+      <InfoDialog />
       {/* <InfoModal open={open}/> */}
       {/* <div className="px-5 py-2 bg-slate-200">
         <p className="text-sm italic mx-5 text-center">
@@ -454,10 +456,10 @@ export default function App() {
         <div className="text-4xl font-argentina">Conexiones</div> <div className='text-4xl font-argentina bg-[#6CACE4] px-2 pb-3 pt-2 mx-2 rounded-sm text-white'>Argentinas</div>
         <div className="flex-1">
           <div className="flex justify-end mr-6">
-            <InformationCircleIcon
+            {/* <InformationCircleIcon
               className="h-6 w-6 cursor-pointer"
               onClick={() => setOpen(true)}
-            />
+            /> */}
           </div>
         </div>
       </div>
