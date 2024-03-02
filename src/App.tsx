@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { shuffleSubsetInplace } from './arrayUtil';
 import { SolutionRow } from './components/SolutionRow';
 import Mate from './assets/mate.png'
+import tango2 from './assets/tango2.jpg'
 import { useDelay } from './hooks';
 import { Grouping, emptyGrouping, useGroupings } from './words';
 
@@ -53,7 +54,6 @@ function Tile({ setTileWidth, tileData, containerWidth }: { setTileWidth: (width
   }
 
   const singleTranslation = containerWidth && tileWidth ? tileWidth + (containerWidth - 4 * tileWidth) / 3 : 0
-  console.log(tileWidth, containerWidth, 'transition size...?')
   const translateX = (position.j - initialPosition.j) * singleTranslation
   const translateY = (position.i - initialPosition.i) * singleTranslation
 
@@ -65,10 +65,6 @@ function Tile({ setTileWidth, tileData, containerWidth }: { setTileWidth: (width
   } else if (status === "wrong") {
     animation = 'animate-shake-wrong'
   }
-
-  useEffect(() => {
-    console.log(tileData.position, 'changed')
-  }, [tileData.position])
 
   return <div ref={tileRef} key={word} onClick={onClick}
     className={twMerge("cursor-pointer aspect-square transition")}
@@ -128,26 +124,19 @@ function useTileDatas(groupings: Grouping[], shuffleInitial: boolean, oneAwayFn:
   const [gameEnded, setGameEnded] = useState(false)
   const [positions, setPositions] = useState<Position[]>(() => orderedPositions)
   const [selectedWords, setSelectedWords] = useState<string[]>(() => [])
-  const [attemps, setAttempts] = useState<Attempt[]>(() => [])
+  const [attempts, setAttempts] = useState<Attempt[]>(() => [])
 
-  useEffect(() => {
-    console.log(positions)
-  }, [positions])
   const words = data.map(d => d.word)
 
-  const correctAttempts = attemps.filter(attempt => attempt.correct)
-  const numberOfIncorrectAttempts = attemps.length - correctAttempts.length
+  const correctAttempts = attempts.filter(attempt => attempt.correct)
+  const numberOfIncorrectAttempts = attempts.length - correctAttempts.length
   const noOfAttemptsRemaining = Math.max(4 - numberOfIncorrectAttempts, 0)
 
   const wordsOutOfPlay = correctAttempts.flatMap(attempt => attempt.words)
   const wordsInPlay = wordList.filter(word => !wordsOutOfPlay.includes(word))
 
   const solutions: Solution[] = correctAttempts.map(attempt => (groupings.find(grouping => grouping.group === areSameGroup(attempt.words, groupings)!)!))
-  const numberOfSolutions = solutions.length
-
-  useEffect(() => {
-    console.log('updated groupings')
-  }, [groupings])
+  const noOfSolutions = solutions.length
 
   useEffect(() => {
     const words = groupings.flatMap(grouping => grouping.words)
@@ -167,16 +156,6 @@ function useTileDatas(groupings: Grouping[], shuffleInitial: boolean, oneAwayFn:
     }
   }, [gameEnded])
 
-  function useAutomaticSubmit(submit: () => void, condition: boolean, dependencies: any[]) {
-    useEffect(() => {
-      if (condition) {
-        submit()
-      }
-    }, dependencies)
-  }
-
-  useAutomaticSubmit(submit, gameEnded, [selectedWords])
-
   function addAttempt(attempt: Attempt) {
     setAttempts(prev => [...prev, attempt])
   }
@@ -194,45 +173,50 @@ function useTileDatas(groupings: Grouping[], shuffleInitial: boolean, oneAwayFn:
     setSelectedWords(() => [])
   }
 
-  function submit() {
-    if (selectedWords.length !== 4) return
+  function submit(submittedWords: string[]) {
+    if (submittedWords.length !== 4) return
 
-    const correct = !!areSameGroup(selectedWords, groupings)
-    addAttempt({ correct: correct, words: selectedWords })
-
-    if (correct) {
-      const rowIndex = Math.min(numberOfSolutions, 3)
-      toTop(selectedWords, rowIndex)
-      setTimeout(() => setTileStatus(selectedWords[0], "attempt"), 0)
-      setTimeout(() => setTileStatus(selectedWords[1], "attempt"), 100)
-      setTimeout(() => setTileStatus(selectedWords[2], "attempt"), 200)
-      setTimeout(() => setTileStatus(selectedWords[3], "attempt"), 300)
-      setTimeout(() => setTileStatus(selectedWords[0], "solved"), 1_000)
-      setTimeout(() => setTileStatus(selectedWords[1], "solved"), 1_000)
-      setTimeout(() => setTileStatus(selectedWords[2], "solved"), 1_000)
-      setTimeout(() => setTileStatus(selectedWords[3], "solved"), 1_000)
-      setTimeout(() => deselectAll(), 1_000)
-    } else if (oneAway(selectedWords, groupings)) {
-      oneAwayFn()
-      setTimeout(() => setTileStatus(selectedWords[0], "attempt"), 0)
-      setTimeout(() => setTileStatus(selectedWords[1], "attempt"), 100)
-      setTimeout(() => setTileStatus(selectedWords[2], "attempt"), 200)
-      setTimeout(() => setTileStatus(selectedWords[3], "attempt"), 300)
-      setTimeout(() => setTileStatus(selectedWords[0], "wrong"), 1_000)
-      setTimeout(() => setTileStatus(selectedWords[1], "wrong"), 1_000)
-      setTimeout(() => setTileStatus(selectedWords[2], "wrong"), 1_000)
-      setTimeout(() => setTileStatus(selectedWords[3], "wrong"), 1_000)
-    } else {
-      setTimeout(() => setTileStatus(selectedWords[0], "attempt"), 0)
-      setTimeout(() => setTileStatus(selectedWords[1], "attempt"), 100)
-      setTimeout(() => setTileStatus(selectedWords[2], "attempt"), 200)
-      setTimeout(() => setTileStatus(selectedWords[3], "attempt"), 300)
-      setTimeout(() => setTileStatus(selectedWords[0], "wrong"), 1_000)
-      setTimeout(() => setTileStatus(selectedWords[1], "wrong"), 1_000)
-      setTimeout(() => setTileStatus(selectedWords[2], "wrong"), 1_000)
-      setTimeout(() => setTileStatus(selectedWords[3], "wrong"), 1_000)
-    }
+    const correct = !!areSameGroup(submittedWords, groupings)
+    addAttempt({ correct: correct, words: submittedWords })
   }
+
+  useEffect(() => {
+    const lastAttempt = attempts.at(-1)
+    if(!lastAttempt) return
+    
+    if (lastAttempt.correct) {
+      const rowIndex = Math.min(noOfSolutions-1, 3)
+      toTop(lastAttempt.words, rowIndex)
+      setTimeout(() => setTileStatus(lastAttempt.words[0], "attempt"), 0)
+      setTimeout(() => setTileStatus(lastAttempt.words[1], "attempt"), 100)
+      setTimeout(() => setTileStatus(lastAttempt.words[2], "attempt"), 200)
+      setTimeout(() => setTileStatus(lastAttempt.words[3], "attempt"), 300)
+      setTimeout(() => setTileStatus(lastAttempt.words[0], "solved"), 1_000)
+      setTimeout(() => setTileStatus(lastAttempt.words[1], "solved"), 1_000)
+      setTimeout(() => setTileStatus(lastAttempt.words[2], "solved"), 1_000)
+      setTimeout(() => setTileStatus(lastAttempt.words[3], "solved"), 1_000)
+      setTimeout(() => deselectAll(), 2_000)
+    } else if (oneAway(lastAttempt.words, groupings)) {
+      oneAwayFn()
+      setTimeout(() => setTileStatus(lastAttempt.words[0], "attempt"), 0)
+      setTimeout(() => setTileStatus(lastAttempt.words[1], "attempt"), 100)
+      setTimeout(() => setTileStatus(lastAttempt.words[2], "attempt"), 200)
+      setTimeout(() => setTileStatus(lastAttempt.words[3], "attempt"), 300)
+      setTimeout(() => setTileStatus(lastAttempt.words[0], "wrong"), 1_000)
+      setTimeout(() => setTileStatus(lastAttempt.words[1], "wrong"), 1_000)
+      setTimeout(() => setTileStatus(lastAttempt.words[2], "wrong"), 1_000)
+      setTimeout(() => setTileStatus(lastAttempt.words[3], "wrong"), 1_000)
+    } else {
+      setTimeout(() => setTileStatus(lastAttempt.words[0], "attempt"), 0)
+      setTimeout(() => setTileStatus(lastAttempt.words[1], "attempt"), 100)
+      setTimeout(() => setTileStatus(lastAttempt.words[2], "attempt"), 200)
+      setTimeout(() => setTileStatus(lastAttempt.words[3], "attempt"), 300)
+      setTimeout(() => setTileStatus(lastAttempt.words[0], "wrong"), 1_000)
+      setTimeout(() => setTileStatus(lastAttempt.words[1], "wrong"), 1_000)
+      setTimeout(() => setTileStatus(lastAttempt.words[2], "wrong"), 1_000)
+      setTimeout(() => setTileStatus(lastAttempt.words[3], "wrong"), 1_000)
+    }
+  }, [attempts])
 
   function wordToPosition(positions: Position[], srcWord: string, dstPosition: Position): Position[] {
 
@@ -272,23 +256,22 @@ function useTileDatas(groupings: Grouping[], shuffleInitial: boolean, oneAwayFn:
     setSelectedWords(prev => prev.filter(prev => prev !== word))
   }
 
-  function solve() {
-    setTimeout(() => {
-      deselectAll()
-      setSelectedWords(groupings.at(0)!.words)
-    }, 2_000)
-    setTimeout(() => {
-      deselectAll()
-      setSelectedWords(groupings.at(1)!.words)
-    }, 4_000)
-    setTimeout(() => {
-      deselectAll()
-      setSelectedWords(groupings.at(2)!.words)
-    }, 6_000)
-    setTimeout(() => {
-      deselectAll()
-      setSelectedWords(groupings.at(3)!.words)
-    }, 8_000)
+  function findUnsolvedGroupings() {
+    return groupings.filter(grouping => !solutions.includes(grouping))
+  }
+
+  async function solve() {
+
+    const unsolvedGroupings = findUnsolvedGroupings()
+
+    for(const grouping of unsolvedGroupings) {
+      await new Promise(resolve => setTimeout(() => {
+        deselectAll()
+        setSelectedWords(grouping.words)
+        submit(grouping.words)
+        return resolve(true)
+      }, 3_000));
+    }
   }
 
   // function setSelectedWordsIncrementalDelay(words: string[], )
@@ -319,7 +302,7 @@ function useTileDatas(groupings: Grouping[], shuffleInitial: boolean, oneAwayFn:
     canDeselect: canDeselect,
     deselectAll: deselectAll,
     canSubmit: canSubmit,
-    submit: submit,
+    submit: () => submit(selectedWords),
     solutions,
     noOfAttemptsRemaining: noOfAttemptsRemaining,
     gameEnded
@@ -383,7 +366,7 @@ function Alert({ visible }: { visible: boolean }) {
     )}>
       <div className='flex flex-col items-center'>
         <div className='text-sm bg-black px-2 py-1 rounded-sm text-white font-bold'>
-          A una palabra...
+          Estás a una palabra...
         </div>
         {/* <div className="border-solid border-t-black border-t-4 border-x-4 border-x-transparent  border-b-0" /> */}
       </div>
@@ -438,7 +421,6 @@ export default function App() {
   const noOfAttemptsRemainingDelayed = useDelay(noOfAttemptsRemaining, 1_000)
 
   const [containerRef, containerWidth] = useContainer()
-  console.log(containerWidth, 'width container')
   const [tileWidth, setTileWidth] = useState<number>()
 
   const [open, setOpen] = useState(false)
@@ -465,7 +447,7 @@ export default function App() {
         </p>
       </div> */}
       {/* <div className='flex w-full justify-center -translate-x-2'>
-        <img src={logoTango} width={300}/>
+        <img src={tango2} width={300}/>
       </div> */}
       <div className="mt-10 flex items-center">
         <div className="flex-1"></div>
