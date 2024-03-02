@@ -1,11 +1,11 @@
 import { twMerge } from 'tailwind-merge';
 import { InformationCircleIcon } from '@heroicons/react/outline';
 import { useEffect, useRef, useState } from 'react';
-import { shuffleInPlace, shuffleSubsetInplace } from './arrayUtil';
+import { shuffleSubsetInplace } from './arrayUtil';
 import { SolutionRow } from './components/SolutionRow';
-import logoTango from './assets/logoTango.jpg'
 import Mate from './assets/mate.png'
 import { useDelay } from './hooks';
+import { Grouping, emptyGrouping, useGroupings } from './words';
 
 const orderedPositions = createOrderedPositions()
 
@@ -43,7 +43,9 @@ function Tile({ setTileWidth, tileData, containerWidth }: { setTileWidth: (width
   const [tileRef, tileWidth] = useContainer()
 
   useEffect(() => {
-    if (tileWidth) setTileWidth(tileWidth)
+    if (tileWidth) {
+      setTileWidth(tileWidth)
+    }
   }, [tileWidth])
 
   const onClick = () => {
@@ -51,7 +53,7 @@ function Tile({ setTileWidth, tileData, containerWidth }: { setTileWidth: (width
   }
 
   const singleTranslation = containerWidth && tileWidth ? tileWidth + (containerWidth - 4 * tileWidth) / 3 : 0
-
+  console.log(tileWidth, containerWidth, 'transition size...?')
   const translateX = (position.j - initialPosition.j) * singleTranslation
   const translateY = (position.i - initialPosition.i) * singleTranslation
 
@@ -63,6 +65,10 @@ function Tile({ setTileWidth, tileData, containerWidth }: { setTileWidth: (width
   } else if (status === "wrong") {
     animation = 'animate-shake-wrong'
   }
+
+  useEffect(() => {
+    console.log(tileData.position, 'changed')
+  }, [tileData.position])
 
   return <div ref={tileRef} key={word} onClick={onClick}
     className={twMerge("cursor-pointer aspect-square transition")}
@@ -111,88 +117,69 @@ type Attempt = {
   words: string[]
 }
 
-
-type Grouping = {
-  group: string
-  color: string
-  words: string[]
-}
-
 export type Solution = Grouping
-
-const groupings: Grouping[] = [
-  {
-    group: "Equipos de futbol",
-    color: 'rgba(184,130,198,1)',
-    words: ["Belgrano", "San Lorenzo", "Lanus", "Tigre"]
-  },
-  {
-    group: "Sabores de alfajor",
-    color: "rgba(160,195,90,1)",
-    words: ["Blanco", "Negro", "Frutal", "Glaseado"]
-  },
-  {
-    group: "Plazas y parques",
-    color: "rgba(175,196,239,1)",
-    words: ["Mayo", "Lezama", "Sarmiento", "Independencia"]
-  },
-  {
-    group: "Radios",
-    color: "rgba(247,222,108,1)",
-    words: ["Aspen", "Disney", "Mitre", "Rivadavia"]
-  }
-]
-
-// const groupings: Grouping[] = [
-//   {
-//     group: "Equipos de futbol",
-//     color: 'rgba(184,130,198,1)',
-//     words: ["ABC", "ABCD", "ABCDE", "ABCDEF"]
-//   },
-//   {
-//     group: "Sabores de alfajor",
-//     color: "rgba(160,195,90,1)",
-//     words: ["ABCDEFG", "ABCDEFGH", "ABCDFGHI", "ABCDEFGHIJ"]
-//   },
-//   {
-//     group: "Plazas y parques",
-//     color: "rgba(175,196,239,1)",
-//     words: ["ABCDEFGHIJK", "ABCDEFGHIJKL", "ABCDEFGHIJKLM", "ABCDEFGHIJKLMN"]
-//   },
-//   {
-//     group: "Radios",
-//     color: "rgba(247,222,108,1)",
-//     words: ["ABCDEFGHIJKLMNO", "ABCDEFGHIJKLMNOP", "ABCDEFGHIJKLMNOPQ", "ABCDEFGHIJKLMNOPQR"]
-//   }
-// ]
 
 type TileTransitionStatus = "solved" | "attempt" | "wrong" | undefined
 
-function useTileDatas(wordList: string[], shuffleInitial: boolean, oneAwayFn: () => void) {
-  const shuffledWords = shuffleInitial ? shuffleSubsetInplace([...wordList], wordList.map((_, index) => index)) : [...wordList]
+function useTileDatas(groupings: Grouping[], shuffleInitial: boolean, oneAwayFn: () => void) {
 
-  const [data, setData] = useState<{ word: string, status: TileTransitionStatus }[]>(() => shuffledWords.map(word => ({ word: word, status: undefined })))
-  const words = data.map(d => d.word)
-
-
+  const [data, setData] = useState<{ word: string, status: TileTransitionStatus }[]>(() => [])
+  const wordList = data.flatMap(d => d.word)
+  const [gameEnded, setGameEnded] = useState(false)
   const [positions, setPositions] = useState<Position[]>(() => orderedPositions)
-
   const [selectedWords, setSelectedWords] = useState<string[]>(() => [])
-
   const [attemps, setAttempts] = useState<Attempt[]>(() => [])
-  function addAttempt(attempt: Attempt) {
-    setAttempts(prev => [...prev, attempt])
-  }
+
+  useEffect(() => {
+    console.log(positions)
+  }, [positions])
+  const words = data.map(d => d.word)
 
   const correctAttempts = attemps.filter(attempt => attempt.correct)
   const numberOfIncorrectAttempts = attemps.length - correctAttempts.length
   const noOfAttemptsRemaining = Math.max(4 - numberOfIncorrectAttempts, 0)
 
-  const solutions: Solution[] = correctAttempts.map(attempt => (groupings.find(grouping => grouping.group === areSameGroup(attempt.words)!)!))
-  const numberOfSolutions = solutions.length
-
   const wordsOutOfPlay = correctAttempts.flatMap(attempt => attempt.words)
   const wordsInPlay = wordList.filter(word => !wordsOutOfPlay.includes(word))
+
+  const solutions: Solution[] = correctAttempts.map(attempt => (groupings.find(grouping => grouping.group === areSameGroup(attempt.words, groupings)!)!))
+  const numberOfSolutions = solutions.length
+
+  useEffect(() => {
+    console.log('updated groupings')
+  }, [groupings])
+
+  useEffect(() => {
+    const words = groupings.flatMap(grouping => grouping.words)
+    const shuffledWords = shuffleInitial ? shuffleSubsetInplace([...words], words.map((_, index) => index)) : [...words]
+    setData( () => [...shuffledWords].map(word => ({ word: word, status: undefined })))  
+  }, [groupings])
+
+  useEffect(() => {
+    if (noOfAttemptsRemaining === 0) {
+      setGameEnded(true)
+    }
+  }, [noOfAttemptsRemaining])
+
+  useEffect(() => {
+    if (gameEnded) {
+      solve()
+    }
+  }, [gameEnded])
+
+  function useAutomaticSubmit(submit: () => void, condition: boolean, dependencies: any[]) {
+    useEffect(() => {
+      if (condition) {
+        submit()
+      }
+    }, dependencies)
+  }
+
+  useAutomaticSubmit(submit, gameEnded, [selectedWords])
+
+  function addAttempt(attempt: Attempt) {
+    setAttempts(prev => [...prev, attempt])
+  }
 
   function setTileStatus(word: string, status: TileTransitionStatus) {
     setData(data => data.map(d => d.word === word ? { ...d, status: status } : d))
@@ -208,11 +195,9 @@ function useTileDatas(wordList: string[], shuffleInitial: boolean, oneAwayFn: ()
   }
 
   function submit() {
-    console.log(selectedWords)
     if (selectedWords.length !== 4) return
 
-
-    const correct = !!areSameGroup(selectedWords)
+    const correct = !!areSameGroup(selectedWords, groupings)
     addAttempt({ correct: correct, words: selectedWords })
 
     if (correct) {
@@ -226,7 +211,8 @@ function useTileDatas(wordList: string[], shuffleInitial: boolean, oneAwayFn: ()
       setTimeout(() => setTileStatus(selectedWords[1], "solved"), 1_000)
       setTimeout(() => setTileStatus(selectedWords[2], "solved"), 1_000)
       setTimeout(() => setTileStatus(selectedWords[3], "solved"), 1_000)
-    } else if (oneAway(selectedWords)) {
+      setTimeout(() => deselectAll(), 1_000)
+    } else if (oneAway(selectedWords, groupings)) {
       oneAwayFn()
       setTimeout(() => setTileStatus(selectedWords[0], "attempt"), 0)
       setTimeout(() => setTileStatus(selectedWords[1], "attempt"), 100)
@@ -248,20 +234,6 @@ function useTileDatas(wordList: string[], shuffleInitial: boolean, oneAwayFn: ()
     }
   }
 
-  const [gameEnded, setGameEnded] = useState(false)
-
-  useEffect(() => {
-    if (noOfAttemptsRemaining === 0) {
-      setGameEnded(true)
-    }
-  }, [noOfAttemptsRemaining])
-
-  useEffect(() => {
-    if (gameEnded) {
-      solve()
-    }
-  }, [gameEnded])
-
   function wordToPosition(positions: Position[], srcWord: string, dstPosition: Position): Position[] {
 
     const srcIndex = words.findIndex(word => word === srcWord)
@@ -276,7 +248,6 @@ function useTileDatas(wordList: string[], shuffleInitial: boolean, oneAwayFn: ()
         return position
       }
     })
-
   }
 
   function toTop(words: string[], row: number) {
@@ -322,16 +293,6 @@ function useTileDatas(wordList: string[], shuffleInitial: boolean, oneAwayFn: ()
 
   // function setSelectedWordsIncrementalDelay(words: string[], )
 
-  function useAutomaticSubmit(submit: () => void, condition: boolean, dependencies: any[]) {
-    useEffect(() => {
-      if (condition) {
-        submit()
-      }
-    }, dependencies)
-  }
-
-  useAutomaticSubmit(submit, gameEnded, [selectedWords])
-
   const tileDatas = data.map((d, index) => {
     const word = d.word
     return {
@@ -370,29 +331,26 @@ function useContainer() {
   const [width, setWidth] = useState<number>()
   useEffect(() => {
     setWidth(ref.current?.offsetWidth)
-  }, [ref])
+  }, [ref, ref.current])
 
   return [ref, width] as const
 }
 
 
-
-const wordList = groupings.flatMap(grouping => grouping.words)
-
-function findGroup(word: string) {
+function findGroup(word: string, groupings: Grouping[]) {
   return groupings.find(grouping => grouping.words.includes(word))!.group
 }
 
-function areSameGroup(words: string[]): string | undefined {
-  const groups = words.map(word => findGroup(word))
+function areSameGroup(words: string[], groupings: Grouping[]): string | undefined {
+  const groups = words.map(word => findGroup(word, groupings))
   if (new Set(groups).size === 1) {
     return groups[0]
   }
   return undefined
 }
 
-function oneAway(words: string[]): boolean {
-  const groups = words.map(word => findGroup(word))
+function oneAway(words: string[], groupings: Grouping[]): boolean {
+  const groups = words.map(word => findGroup(word, groupings))
   const groupSet = new Set(groups)
   return groupSet.size === 2 && Array.from(groupSet.values()).every(word => {
     const numMatches = groups.filter(w => w === word).length
@@ -443,7 +401,7 @@ function useEnableForMS(initial: boolean, delay: number, msToDisable: number) {
   return [value, triggerEnable] as const
 }
 
-function InfoModal({open}: {open: boolean}) {
+function InfoModal({ open }: { open: boolean }) {
 
   return <div className={twMerge(
     'absolute w-full h-full px-4 py-4 bg-black/10',
@@ -456,12 +414,23 @@ function InfoModal({open}: {open: boolean}) {
   </div>
 }
 
+function getDate(dayahead: boolean) {
+  let date = new Date()
+  if (dayahead) {
+    date.setDate(date.getDate() + 1)
+  }
+  return date
+}
+
 export default function App() {
+
+
+  const groupings = useGroupings(getDate(false))
 
   const [alertVisisble, triggerAlert] = useEnableForMS(false, 500, 2_000)
 
   const { tileDatas, shuffle, canDeselect, deselectAll, submit, canSubmit, solutions, noOfAttemptsRemaining, gameEnded } = useTileDatas(
-    wordList,
+    groupings ?? emptyGrouping, // to fill tiles and all 
     true,
     triggerAlert
   )
@@ -469,9 +438,21 @@ export default function App() {
   const noOfAttemptsRemainingDelayed = useDelay(noOfAttemptsRemaining, 1_000)
 
   const [containerRef, containerWidth] = useContainer()
+  console.log(containerWidth, 'width container')
   const [tileWidth, setTileWidth] = useState<number>()
 
   const [open, setOpen] = useState(false)
+
+  if (!groupings) {
+    return <div>
+      <div className="w-screen h-screen flex justify-center items-center">
+        <svg aria-hidden="true" className="w-8 h-8 text-gray-200 animate-spin fill-[#6CACE4]" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor" />
+          <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill" />
+        </svg>
+      </div>
+    </div>
+  }
   return (
     <div className="h-screen w-screen flex flex-col">
       {/* <InfoModal open={open}/> */}

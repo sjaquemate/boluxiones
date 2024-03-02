@@ -24,6 +24,5 @@ export function shuffleSubsetInplace(values: any[], subsetIndices: number[]) {
   subsetIndices.forEach((index, i) => {
     values[index] = subset[i]
   })
-  console.log(values.map(v => v.word))
   return values
 }
