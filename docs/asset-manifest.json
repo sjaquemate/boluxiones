@@ -1,14 +1,14 @@
 {
   "files": {
-    "main.css": "./static/css/main.bdfc45ff.css",
-    "main.js": "./static/js/main.3dd38fe6.js",
+    "main.css": "./static/css/main.53063697.css",
+    "main.js": "./static/js/main.307442fc.js",
     "static/media/argentina.otf": "./static/media/argentina.5917aab9a7777f4baa9f.otf",
     "index.html": "./index.html",
-    "main.bdfc45ff.css.map": "./static/css/main.bdfc45ff.css.map",
-    "main.3dd38fe6.js.map": "./static/js/main.3dd38fe6.js.map"
+    "main.53063697.css.map": "./static/css/main.53063697.css.map",
+    "main.307442fc.js.map": "./static/js/main.307442fc.js.map"
   },
   "entrypoints": [
-    "static/css/main.bdfc45ff.css",
-    "static/js/main.3dd38fe6.js"
+    "static/css/main.53063697.css",
+    "static/js/main.307442fc.js"
   ]
 }

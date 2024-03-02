@@ -61,26 +61,23 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
-          wave: {
-            '0%': { transform: 'scale(0.8)' },
-            '50%': { transform: 'scale(1.2)' },
+          scale: {
+            '0%': { transform: 'scale(0.9)' },
+            '50%': { transform: 'scale(1.3)' },
             '100%': { transform: 'scale(1)' },
           },
-          correct: {
-            // '0%': { transform: 'translateX(0px)' },
+          attempt: {
             '50%': { transform: 'translateY(-5%)' },
-            // '100%': { transform: 'translateX(10px)' },
           },
           wrong: {
-            
             '25%': { transform: 'translateX(-4%)' },
             '75%': { transform: 'translateX(4%)' },
           }
       },
       animation: {
-        'scale-big-normal': 'wave 200ms ease-in-out',
-        'bounce-correct': 'correct 500ms ease-in-out',
-        'bounce-wrong': 'wrong 300ms linear',
+        'scale-big-normal': 'scale 200ms ease-in-out',
+        'bounce-attempt': 'attempt 500ms ease-in-out',
+        'shake-wrong': 'wrong 300ms linear',
       },
     },
   },
