@@ -184,7 +184,7 @@ function useTileDatas(groupings: Grouping[], shuffleInitial: boolean, oneAwayFn:
   useEffect(() => {
     const lastAttempt = attempts.at(-1)
     if(!lastAttempt) return
-    
+        
     if (lastAttempt.correct) {
       const rowIndex = Math.min(noOfSolutions-1, 3)
       toTop(lastAttempt.words, rowIndex)
@@ -342,9 +342,25 @@ function oneAway(words: string[], groupings: Grouping[]): boolean {
   })
 }
 
-function ButtonButton({ label, onClick, disabled, filled }: { label: string, onClick: () => void, disabled?: boolean, filled?: boolean }) {
+function ButtonButton({ label, onClick, active, filled }: { label: string, onClick: () => void, active: boolean, filled?: boolean }) {
+  const [justClicked, setJustClicked] = useState(false)
+  const disabled = !active || justClicked
+
+  useEffect(() => {
+    if(justClicked) {
+      setTimeout(() => setJustClicked(false), 2_500)
+    }
+  }, [justClicked])
+
+  function submit() {
+    if(disabled) return
+    setJustClicked(true)
+    onClick()
+  }
+
+  
   return <button
-    onClick={() => disabled ? () => { } : onClick()}
+    onClick={submit}
     className={twMerge(
       "rounded-3xl font-bold text-center  py-2 px-4 border-solid border-2",
       "transition duration-300",
@@ -408,14 +424,14 @@ function getDate(dayahead: boolean) {
 
 export default function App() {
 
-
+  
   const groupings = useGroupings(getDate(false))
 
   const [alertVisisble, triggerAlert] = useEnableForMS(false, 500, 2_000)
 
   const { tileDatas, shuffle, canDeselect, deselectAll, submit, canSubmit, solutions, noOfAttemptsRemaining, gameEnded } = useTileDatas(
     groupings ?? emptyGrouping, // to fill tiles and all 
-    true,
+    false,
     triggerAlert
   )
 
@@ -507,9 +523,9 @@ export default function App() {
         }
       </div>
       <div className='mt-6 gap-x-4 flex justify-center'>
-        <ButtonButton label='Shuffle' onClick={shuffle} />
-        <ButtonButton label='Deseleccionar' onClick={deselectAll} disabled={!canDeselect} />
-        <ButtonButton label='Enviar' onClick={submit} disabled={!canSubmit} filled />
+        <ButtonButton label='Shuffle' onClick={shuffle} active/>
+        <ButtonButton label='Deseleccionar' onClick={deselectAll} active={canDeselect} />
+        <ButtonButton label='Enviar' onClick={submit} active={canSubmit} filled />
       </div>
     </div>
   )

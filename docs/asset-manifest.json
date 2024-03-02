@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "./static/css/main.21d4a2e7.css",
-    "main.js": "./static/js/main.d190615a.js",
+    "main.js": "./static/js/main.a5ccafc8.js",
     "static/media/argentina.otf": "./static/media/argentina.5917aab9a7777f4baa9f.otf",
     "index.html": "./index.html",
     "main.21d4a2e7.css.map": "./static/css/main.21d4a2e7.css.map",
-    "main.d190615a.js.map": "./static/js/main.d190615a.js.map"
+    "main.a5ccafc8.js.map": "./static/js/main.a5ccafc8.js.map"
   },
   "entrypoints": [
     "static/css/main.21d4a2e7.css",
-    "static/js/main.d190615a.js"
+    "static/js/main.a5ccafc8.js"
   ]
 }
