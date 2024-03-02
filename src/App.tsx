@@ -438,7 +438,7 @@ export default function App() {
   }
   return (
     <div className="h-screen w-screen flex flex-col">
-      <InfoDialog />
+      {/* <InfoDialog /> */}
       {/* <InfoModal open={open}/> */}
       {/* <div className="px-5 py-2 bg-slate-200">
         <p className="text-sm italic mx-5 text-center">
