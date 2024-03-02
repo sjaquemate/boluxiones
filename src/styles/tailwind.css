@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
  
+@font-face {
+  font-family: "Argentina";
+  src: url("./fonts/argentina.otf");
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

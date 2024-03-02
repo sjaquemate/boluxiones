@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { shuffleInPlace, shuffleSubsetInplace } from './arrayUtil';
 import { SolutionRow } from './components/SolutionRow';
 import logoTango from './assets/logoTango.jpg'
+import Mate from './assets/mate.png'
 
 const orderedPositions = createOrderedPositions()
 
@@ -22,23 +23,21 @@ function getOrderedIndexOfPosition(position: Position) {
 }
 
 function getFontSize(wordLength: number) {
-  if (wordLength < 7) {
+  if (wordLength < 8) {
     return "text-md"
-  } else if (wordLength < 6) {
-    return "text-sm"
-  } else if (wordLength < 10) {
+  } else if (wordLength < 11) {
     return "text-xs"
-  } else if (wordLength < 20) {
+  } else if (wordLength < 14) {
     return "text-[10px]"
   } else {
-    return "text-xs"
+    return "text-[7px]"
   }
 }
 
 function Tile({ setTileWidth, tileData, containerWidth }: { setTileWidth: (width: number) => void, tileData: TileData, containerWidth?: number }) {
 
   const { word, status, selected, setSelected, initialPosition, position } = tileData
-  const fontSize = getFontSize(word.length)
+  const fontSize = getFontSize(Math.max(...word.split('\n').map(partial => partial.length)))
 
   const [tileRef, tileWidth] = useContainer()
 
@@ -61,9 +60,9 @@ function Tile({ setTileWidth, tileData, containerWidth }: { setTileWidth: (width
   const zIndex = 16 - getOrderedIndexOfPosition(position)
 
   let animation = ''
-  if(status === "correct") {
-    animation = 'animate-bounce-correct'
-  } else if(status === "wrong") {
+  if (status === "correct") {
+    animation = 'animate-bounce-correct bg-blue-300'
+  } else if (status === "wrong") {
     animation = 'animate-bounce-wrong'
   }
 
@@ -86,7 +85,7 @@ function Tile({ setTileWidth, tileData, containerWidth }: { setTileWidth: (width
       }}>
 
       <div key={word} className={
-        twMerge('flex h-full w-full items-center justify-center font-bold uppercase select-none',
+        twMerge('flex h-full w-full items-center justify-center font-bold uppercase select-none whitespace-pre text-center',
           fontSize,
           `${selected ? 'text-white' : 'text-black'}`
         )}>{word}</div>
@@ -150,13 +149,37 @@ const groupings: Grouping[] = [
   }
 ]
 
+// const groupings: Grouping[] = [
+//   {
+//     group: "Equipos de futbol",
+//     color: 'rgba(184,130,198,1)',
+//     words: ["ABC", "ABCD", "ABCDE", "ABCDEF"]
+//   },
+//   {
+//     group: "Sabores de alfajor",
+//     color: "rgba(160,195,90,1)",
+//     words: ["ABCDEFG", "ABCDEFGH", "ABCDFGHI", "ABCDEFGHIJ"]
+//   },
+//   {
+//     group: "Plazas y parques",
+//     color: "rgba(175,196,239,1)",
+//     words: ["ABCDEFGHIJK", "ABCDEFGHIJKL", "ABCDEFGHIJKLM", "ABCDEFGHIJKLMN"]
+//   },
+//   {
+//     group: "Radios",
+//     color: "rgba(247,222,108,1)",
+//     words: ["ABCDEFGHIJKLMNO", "ABCDEFGHIJKLMNOP", "ABCDEFGHIJKLMNOPQ", "ABCDEFGHIJKLMNOPQR"]
+//   }
+// ]
+
 type TileStatus = "correct" | "wrong" | undefined
 
-function useTileDatas(wordList: string[]): [TileData[], () => void, () => void, () => void, Solution[], number] {
-  const shuffledWords = shuffleSubsetInplace([...wordList], wordList.map((_,index) => index))
-  const [data, setData] = useState<{ word: string, status: TileStatus }[]>(() => shuffledWords.map(word => ({word: word, status: undefined})))
+function useTileDatas(wordList: string[], shuffleInitial: boolean, oneAwayFn: () => void) {
+  const shuffledWords = shuffleInitial ? shuffleSubsetInplace([...wordList], wordList.map((_, index) => index)) : [...wordList]
+
+  const [data, setData] = useState<{ word: string, status: TileStatus }[]>(() => shuffledWords.map(word => ({ word: word, status: undefined })))
   const words = data.map(d => d.word)
-  
+
 
   const [positions, setPositions] = useState<Position[]>(() => orderedPositions)
 
@@ -169,7 +192,7 @@ function useTileDatas(wordList: string[]): [TileData[], () => void, () => void, 
 
   const correctAttempts = attemps.filter(attempt => attempt.correct)
   const numberOfIncorrectAttempts = attemps.length - correctAttempts.length
-  const triesLeft = 4 - numberOfIncorrectAttempts
+  const noOfAttemptsRemaining = Math.max(4 - numberOfIncorrectAttempts, 0)
 
   const solutions: Solution[] = correctAttempts.map(attempt => (groupings.find(grouping => grouping.group === areSameGroup(attempt.words)!)!))
   const numberOfSolutions = solutions.length
@@ -192,7 +215,7 @@ function useTileDatas(wordList: string[]): [TileData[], () => void, () => void, 
 
   function submit() {
     if (selectedWords.length === 4) {
-      
+
       const correct = !!areSameGroup(selectedWords)
       addAttempt({ correct: correct, words: selectedWords })
       setTimeout(() => setSelectedWords(() => []), 1_500)
@@ -205,23 +228,33 @@ function useTileDatas(wordList: string[]): [TileData[], () => void, () => void, 
         setTimeout(() => setTileStatus(selectedWords[2], "correct"), 200)
         setTimeout(() => setTileStatus(selectedWords[3], "correct"), 300)
       } else if (oneDifferent(selectedWords)) {
-        setTileStatus(selectedWords[0], "wrong")
-        setTileStatus(selectedWords[1], "wrong")
-        setTileStatus(selectedWords[2], "wrong")
-        setTileStatus(selectedWords[3], "wrong")
-        setTimeout(() => setTileStatus(selectedWords[0], undefined), 1_000)
-        setTimeout(() => setTileStatus(selectedWords[1], undefined), 1_000)
-        setTimeout(() => setTileStatus(selectedWords[2], undefined), 1_000)
-        setTimeout(() => setTileStatus(selectedWords[3], undefined), 1_000)
+        oneAwayFn()
+        console.log('one away...')
+        setTimeout(() => setTileStatus(selectedWords[0], "correct"), 0)
+        setTimeout(() => setTileStatus(selectedWords[1], "correct"), 100)
+        setTimeout(() => setTileStatus(selectedWords[2], "correct"), 200)
+        setTimeout(() => setTileStatus(selectedWords[3], "correct"), 300)
+        setTimeout(() => setTileStatus(selectedWords[0], "wrong"), 1_000)
+        setTimeout(() => setTileStatus(selectedWords[1], "wrong"), 1_000)
+        setTimeout(() => setTileStatus(selectedWords[2], "wrong"), 1_000)
+        setTimeout(() => setTileStatus(selectedWords[3], "wrong"), 1_000)
+        setTimeout(() => setTileStatus(selectedWords[0], undefined), 2_000)
+        setTimeout(() => setTileStatus(selectedWords[1], undefined), 2_000)
+        setTimeout(() => setTileStatus(selectedWords[2], undefined), 2_000)
+        setTimeout(() => setTileStatus(selectedWords[3], undefined), 2_000)
       } else {
-        setTileStatus(selectedWords[0], "wrong")
-        setTileStatus(selectedWords[1], "wrong")
-        setTileStatus(selectedWords[2], "wrong")
-        setTileStatus(selectedWords[3], "wrong")
-        setTimeout(() => setTileStatus(selectedWords[0], undefined), 1_000)
-        setTimeout(() => setTileStatus(selectedWords[1], undefined), 1_000)
-        setTimeout(() => setTileStatus(selectedWords[2], undefined), 1_000)
-        setTimeout(() => setTileStatus(selectedWords[3], undefined), 1_000)
+        setTimeout(() => setTileStatus(selectedWords[0], "correct"), 0)
+        setTimeout(() => setTileStatus(selectedWords[1], "correct"), 100)
+        setTimeout(() => setTileStatus(selectedWords[2], "correct"), 200)
+        setTimeout(() => setTileStatus(selectedWords[3], "correct"), 300)
+        setTimeout(() => setTileStatus(selectedWords[0], "wrong"), 1_000)
+        setTimeout(() => setTileStatus(selectedWords[1], "wrong"), 1_000)
+        setTimeout(() => setTileStatus(selectedWords[2], "wrong"), 1_000)
+        setTimeout(() => setTileStatus(selectedWords[3], "wrong"), 1_000)
+        setTimeout(() => setTileStatus(selectedWords[0], undefined), 2_000)
+        setTimeout(() => setTileStatus(selectedWords[1], undefined), 2_000)
+        setTimeout(() => setTileStatus(selectedWords[2], undefined), 2_000)
+        setTimeout(() => setTileStatus(selectedWords[3], undefined), 2_000)
       }
     }
   }
@@ -265,7 +298,7 @@ function useTileDatas(wordList: string[]): [TileData[], () => void, () => void, 
     setSelectedWords(prev => prev.filter(prev => prev !== word))
   }
 
-  return [data.map((d, index) => {
+  const tileDatas = data.map((d, index) => {
     const word = d.word
     return {
       word: word,  // data
@@ -281,9 +314,20 @@ function useTileDatas(wordList: string[]): [TileData[], () => void, () => void, 
       initialPosition: orderedPositions.at(index)!,  // position
       position: positions.at(index)!, // position
     }
-  }), shuffle, deselectAll, submit, solutions, triesLeft]
+  })
 
-
+  const canDeselect = selectedWords.length > 0
+  const canSubmit = selectedWords.length === 4 && noOfAttemptsRemaining > 0
+  return {
+    tileDatas: tileDatas,
+    shuffle: shuffle,
+    canDeselect: canDeselect,
+    deselectAll: deselectAll,
+    canSubmit: canSubmit,
+    submit: submit,
+    solutions,
+    noOfAttemptsRemaining: noOfAttemptsRemaining
+  }
 }
 
 function useContainer() {
@@ -314,40 +358,85 @@ function areSameGroup(words: string[]): string | undefined {
 
 function oneDifferent(words: string[]): boolean {
   const groups = words.map(word => findGroup(word))
-  return (new Set(groups).size === 2)
+  const groupSet = new Set(groups)
+  return groupSet.size === 2 && Array.from(groupSet.values()).every(word => {
+    const numMatches = groups.filter(w => w === word).length
+    return numMatches === 1 || numMatches === 3
+  })
 }
 
-function ButtonButton({ label, onClick }: { label: string, onClick: () => void }) {
+function ButtonButton({ label, onClick, disabled }: { label: string, onClick: () => void, disabled?: boolean }) {
   return <button
-    onClick={onClick}
-    className="rounded-3xl font-bold text-center text-black py-2 px-4 border-solid border-2 border-black">
+    onClick={() => disabled ? () => {} :  onClick()}
+    className={twMerge(
+      "rounded-3xl font-bold text-center  py-2 px-4 border-solid border-2",
+      "transition duration-300",
+      disabled ? "text-neutral-400 border-neutral-400" : "text-black border-black"
+    )}>
     {label}
   </button>
 }
 
+function RemainingDot() {
+  return <div className='bg-neutral-600 w-3 h-3 rounded-full'></div>
+}
+
+function Alert({ visible }: { visible: boolean }) {
+  return (
+    <div className={twMerge(
+      "absolute left-0 right-0 bottom-0 top-0 transition duration-500",
+      visible ? "opacity-100" : "opacity-0"
+    )}>
+      <div className='flex flex-col items-center'>
+        <div className='bg-black px-2 py-1 rounded-sm text-white font-bold'>
+          A una palabra...
+        </div>
+        {/* <div className="border-solid border-t-black border-t-4 border-x-4 border-x-transparent  border-b-0" /> */}
+      </div>
+    </div>
+  )
+}
+
+function useEnableForMS(initial: boolean, delay: number, msToDisable: number) {
+  const [value, setValue] = useState(initial)
+  const triggerEnable = () => {
+    setTimeout(() => setValue(true), delay)
+    setTimeout(() => setValue(false), msToDisable)
+  }
+
+  return [value, triggerEnable] as const
+}
+
 export default function App() {
 
-  const [tileDatas, shuffle, deselectAll, submit, solutions, triesLeft] = useTileDatas(wordList)
+  const [alertVisisble, triggerAlert] = useEnableForMS(false, 500, 2_000)
+
+  const { tileDatas, shuffle, canDeselect, deselectAll, submit, canSubmit, solutions, noOfAttemptsRemaining } = useTileDatas(
+    wordList,
+    true,
+    triggerAlert
+  )
+
 
   const [containerRef, containerWidth] = useContainer()
   const [tileWidth, setTileWidth] = useState<number>()
 
   return (
     <div className="h-screen w-screen flex flex-col">
-      <div className="px-5 py-2 bg-slate-200">
+      {/* <div className="px-5 py-2 bg-slate-200">
         <p className="text-sm italic mx-5 text-center">
           <a className="underline font-bold" href="https://www.leer.org/donar">
             apoyá
           </a>{' '}
           la lectura de los boludles más pequeños
         </p>
-      </div>
+      </div> */}
       {/* <div className='flex w-full justify-center -translate-x-2'>
         <img src={logoTango} width={300}/>
       </div> */}
-      <div className="mt-6 flex items-center">
+      <div className="mt-10 flex items-center">
         <div className="flex-1"></div>
-        <p className="text-2xl">Conexiones Argentinas</p>
+        <div className="text-4xl font-argentina">Conexiones</div> <div className='text-4xl font-argentina bg-[#6CACE4] px-2 pb-3 pt-2 mx-2 rounded-sm text-white'>Argentinas</div>
         <div className="flex-1">
           <div className="flex justify-end mr-6">
             <InformationCircleIcon
@@ -361,10 +450,18 @@ export default function App() {
         _____________________________________________________________-
       </div> */}
       <div className="mt-4 flex justify-center items-center ">
-        Creá cuatro grupos de cuatro!
-      </div>
-      <div className="mt-6 mx-2">
+        <div className='relative flex items-center gap-1'>
+          <span>
+            Creá cuatro grupos de cuatro!
+          </span>
+          {/* <div className='flex w-full justify-center -translate-x-2'> */}
+          <img src={Mate} className='w-6' />
+          {/* </div> */}
+          <Alert visible={alertVisisble} />
 
+        </div>
+      </div>
+      <div className="mt-4 mx-2">
         <div className="flex justify-center w-full ">
           <div ref={containerRef} className="relative w-full max-w-[500px]" >
             <div className="absolute w-full h-full" >
@@ -381,13 +478,16 @@ export default function App() {
           </div>
         </div>
       </div>
-      <div>
-        tries left {triesLeft}
+      <div className='mt-6 flex justify-center w-full gap-2 items-center'>
+        <div>Intentos restantes:</div>
+        <div className='flex gap-1'>
+          {Array.from(Array(noOfAttemptsRemaining)).map(_ => <RemainingDot />)}
+        </div>
       </div>
-      <div className='mt-10 gap-x-4 flex justify-center'>
+      <div className='mt-6 gap-x-4 flex justify-center'>
         <ButtonButton label='Shuffle' onClick={shuffle} />
-        <ButtonButton label='Deseleccionar' onClick={deselectAll} />
-        <ButtonButton label='Enviar' onClick={submit} />
+        <ButtonButton label='Deseleccionar' onClick={deselectAll} disabled={!canDeselect} />
+        <ButtonButton label='Enviar' onClick={submit} disabled={!canSubmit} />
       </div>
     </div>
   )
