@@ -19,6 +19,7 @@ module.exports = {
     extend: {
       fontFamily: {
         argentina: ['"Argentina"', "sans-serif"],
+        montserrat: ['"Montserrat"', "sans-serif"]
       },
       colors: {
         border: "hsl(var(--border))",

@@ -7,6 +7,12 @@
   src: url("./fonts/argentina.otf");
 }
 
+@font-face {
+  font-family: "Montserrat";
+  src: url("./fonts/montserrat.ttf");
+}
+
+
 @layer base {
   :root {
     --background: 0 0% 100%;

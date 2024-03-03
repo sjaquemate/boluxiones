@@ -9,3 +9,21 @@ export function useDelay<T>(value: T, timeout: number): T {
 
   return delayedValue
 }
+
+
+export function useTime(updateIntervalMS: number) {
+  const [time, setTime] = useState(0)
+
+  useEffect(() => {
+    const startTime = new Date()
+    const intervalId = setInterval(() => {
+      const dt = (new Date()).getTime() - startTime.getTime()
+      setTime(dt)
+    }, updateIntervalMS);
+    return () => {
+      clearInterval(intervalId)
+    };
+  }, [])
+
+  return time
+}

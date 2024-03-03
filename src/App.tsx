@@ -6,8 +6,9 @@ import { SolutionRow } from './components/SolutionRow';
 import Mate from './assets/mate.png'
 import tango2 from './assets/tango2.jpg'
 import { useDelay } from './hooks';
-import { Grouping, emptyGrouping, useGroupings } from './words';
-import InfoDialog from './InfoDialog';
+import { Grouping, difficultyToEmoji, emptyGrouping, useGroupings } from './words';
+import { InfoModal } from './InfoModal';
+import { EndScreenModal } from './EndScreenModal';
 
 const orderedPositions = createOrderedPositions()
 
@@ -37,28 +38,28 @@ function getFontSize(wordLength: number) {
   }
 }
 
-function Tile({ setTileWidth, tileData, containerWidth }: { setTileWidth: (width: number) => void, tileData: TileData, containerWidth?: number }) {
+export function Tile({ setTileHeight, tileData, containerWidth }: { setTileHeight: (height: number) => void, tileData: TileData, containerWidth?: number }) {
 
-  const { word, status, selected, setSelected, initialPosition, position } = tileData
+  const { word, status, selected, setSelected, dx, dy } = tileData
   const fontSize = getFontSize(Math.max(...word.split('\n').map(partial => partial.length)))
 
-  const [tileRef, tileWidth] = useContainer()
+  const { ref: tileRef, height: tileHeight, width: tileWidth } = useContainer()
 
   useEffect(() => {
-    if (tileWidth) {
-      setTileWidth(tileWidth)
+    if (tileHeight) {
+      setTileHeight(tileHeight)
     }
-  }, [tileWidth])
+  }, [tileHeight])
 
   const onClick = () => {
     setSelected(!selected)
   }
 
   const singleTranslation = containerWidth && tileWidth ? tileWidth + (containerWidth - 4 * tileWidth) / 3 : 0
-  const translateX = (position.j - initialPosition.j) * singleTranslation
-  const translateY = (position.i - initialPosition.i) * singleTranslation
+  const translateX = (dx) * singleTranslation
+  const translateY = (dy) * singleTranslation
 
-  const zIndex = 16 - getOrderedIndexOfPosition(position)
+  const zIndex = 16
 
   let animation = ''
   if (status === "attempt") {
@@ -100,8 +101,8 @@ type TileData = {
   selected: boolean
   status: TileTransitionStatus
   setSelected: (selected: boolean) => void
-  initialPosition: Position
-  position: Position
+  dx: number
+  dy: number
 }
 
 type Position = {
@@ -109,9 +110,10 @@ type Position = {
   j: number
 }
 
-type Attempt = {
+export type Attempt = {
   correct: boolean
   words: string[]
+  by: 'auto' | 'user'
 }
 
 export type Solution = Grouping
@@ -142,18 +144,18 @@ function useTileDatas(groupings: Grouping[], shuffleInitial: boolean, oneAwayFn:
   useEffect(() => {
     const words = groupings.flatMap(grouping => grouping.words)
     const shuffledWords = shuffleInitial ? shuffleSubsetInplace([...words], words.map((_, index) => index)) : [...words]
-    setData( () => [...shuffledWords].map(word => ({ word: word, status: undefined })))  
+    setData(() => [...shuffledWords].map(word => ({ word: word, status: undefined })))
   }, [groupings])
 
   useEffect(() => {
-    if (noOfAttemptsRemaining === 0) {
+    if (noOfAttemptsRemaining === 0 || solutions.length === 4) {
       setGameEnded(true)
     }
-  }, [noOfAttemptsRemaining])
+  }, [noOfAttemptsRemaining, solutions])
 
   useEffect(() => {
     if (gameEnded) {
-      solve()
+      autoSolve()
     }
   }, [gameEnded])
 
@@ -174,19 +176,19 @@ function useTileDatas(groupings: Grouping[], shuffleInitial: boolean, oneAwayFn:
     setSelectedWords(() => [])
   }
 
-  function submit(submittedWords: string[]) {
+  function submit(submittedWords: string[], autoAttempt: boolean = false) {
     if (submittedWords.length !== 4) return
 
     const correct = !!areSameGroup(submittedWords, groupings)
-    addAttempt({ correct: correct, words: submittedWords })
+    addAttempt({ correct: correct, words: submittedWords, by: autoAttempt ? 'auto' : 'user' })
   }
 
   useEffect(() => {
     const lastAttempt = attempts.at(-1)
-    if(!lastAttempt) return
-        
+    if (!lastAttempt) return
+
     if (lastAttempt.correct) {
-      const rowIndex = Math.min(noOfSolutions-1, 3)
+      const rowIndex = Math.min(noOfSolutions - 1, 3)
       toTop(lastAttempt.words, rowIndex)
       setTimeout(() => setTileStatus(lastAttempt.words[0], "attempt"), 0)
       setTimeout(() => setTileStatus(lastAttempt.words[1], "attempt"), 100)
@@ -261,19 +263,36 @@ function useTileDatas(groupings: Grouping[], shuffleInitial: boolean, oneAwayFn:
     return groupings.filter(grouping => !solutions.includes(grouping))
   }
 
-  async function solve() {
+  const [autoSolveEnded, setAutoSolveEnded] = useState(false)
+
+  async function autoSolve() {
 
     const unsolvedGroupings = findUnsolvedGroupings()
 
-    for(const grouping of unsolvedGroupings) {
+    for (const grouping of unsolvedGroupings) {
       await new Promise(resolve => setTimeout(() => {
         deselectAll()
         setSelectedWords(grouping.words)
-        submit(grouping.words)
+        submit(grouping.words, true)
         return resolve(true)
       }, 3_000));
     }
+    setTimeout(() => setAutoSolveEnded(true), 2_000)
   }
+
+  function wordToDifficulty(word: string): number {
+    return groupings.filter(grouping => grouping.words.includes(word)).at(0)!.difficulty
+  }
+
+  function getEmojiRepresentation() {
+    const userAttempts = attempts.filter(attempt => attempt.by === 'user')
+    return userAttempts.map(attempt =>
+      attempt.words.map(word => difficultyToEmoji(wordToDifficulty(word)))
+    )
+  }
+
+  const emojiRepresentation = getEmojiRepresentation()
+
 
   // function setSelectedWordsIncrementalDelay(words: string[], )
 
@@ -290,8 +309,8 @@ function useTileDatas(groupings: Grouping[], shuffleInitial: boolean, oneAwayFn:
           removeSelectedWord(word)
         }
       },
-      initialPosition: orderedPositions.at(index)!,  // position
-      position: positions.at(index)!, // position
+      dx: positions.at(index)!.j - orderedPositions.at(index)!.j,
+      dy: positions.at(index)!.i - orderedPositions.at(index)!.i,
     }
   })
 
@@ -304,20 +323,29 @@ function useTileDatas(groupings: Grouping[], shuffleInitial: boolean, oneAwayFn:
     deselectAll: deselectAll,
     canSubmit: canSubmit,
     submit: () => submit(selectedWords),
-    solutions,
+    emojiRepresentation: emojiRepresentation,
+    solutions: solutions,
     noOfAttemptsRemaining: noOfAttemptsRemaining,
-    gameEnded
+    gameEnded: gameEnded,
+    autoSolveEnded: autoSolveEnded
   }
 }
 
 function useContainer() {
   const ref = useRef<HTMLDivElement>(null)
   const [width, setWidth] = useState<number>()
+  const [height, setHeight] = useState<number>()
+
   useEffect(() => {
     setWidth(ref.current?.offsetWidth)
+    setHeight(ref.current?.offsetHeight)
   }, [ref, ref.current])
 
-  return [ref, width] as const
+  return {
+    ref: ref,
+    width: width,
+    height: height
+  } as const
 }
 
 
@@ -347,18 +375,18 @@ function ButtonButton({ label, onClick, active, filled }: { label: string, onCli
   const disabled = !active || justClicked
 
   useEffect(() => {
-    if(justClicked) {
+    if (justClicked) {
       setTimeout(() => setJustClicked(false), 2_500)
     }
   }, [justClicked])
 
   function submit() {
-    if(disabled) return
+    if (disabled) return
     setJustClicked(true)
     onClick()
   }
 
-  
+
   return <button
     onClick={submit}
     className={twMerge(
@@ -371,8 +399,13 @@ function ButtonButton({ label, onClick, active, filled }: { label: string, onCli
   </button>
 }
 
-function RemainingDot() {
-  return <div className='bg-neutral-600 w-3 h-3 rounded-full'></div>
+function RemainingDot({ active }: { active?: boolean }) {
+  const color = active ? 'text-yellow-400' : 'text-neutral-400'
+  return <svg className={twMerge("w-4 h-4 ms-1", color)} xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 20">
+    <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z" />
+  </svg>
+  // return <div className='bg-yellow-400   w-3 h-3 rounded-full'></div>
+  // return <div>☀️</div>
 }
 
 function Alert({ visible }: { visible: boolean }) {
@@ -401,18 +434,6 @@ function useEnableForMS(initial: boolean, delay: number, msToDisable: number) {
   return [value, triggerEnable] as const
 }
 
-function InfoModal({ open }: { open: boolean }) {
-
-  return <div className={twMerge(
-    'absolute w-full h-full px-4 py-4 bg-black/10',
-    open ? 'opacity-100' : 'opacity-0'
-  )} style={{ zIndex: 200 }}>
-    <div className='bg-white w-full rounded-xl shadow-xl'>
-      <div>hello</div>
-    </div>
-
-  </div>
-}
 
 function getDate(dayahead: boolean) {
   let date = new Date()
@@ -424,23 +445,32 @@ function getDate(dayahead: boolean) {
 
 export default function App() {
 
-  
+
   const groupings = useGroupings(getDate(false))
 
   const [alertVisisble, triggerAlert] = useEnableForMS(false, 500, 2_000)
 
-  const { tileDatas, shuffle, canDeselect, deselectAll, submit, canSubmit, solutions, noOfAttemptsRemaining, gameEnded } = useTileDatas(
-    groupings ?? emptyGrouping, // to fill tiles and all 
-    false,
-    triggerAlert
-  )
+  const { tileDatas, shuffle, canDeselect, deselectAll, submit, canSubmit, solutions,
+    noOfAttemptsRemaining, gameEnded, autoSolveEnded, emojiRepresentation } = useTileDatas(
+      groupings ?? emptyGrouping, // to fill tiles and all 
+      false,
+      triggerAlert
+    )
+
 
   const noOfAttemptsRemainingDelayed = useDelay(noOfAttemptsRemaining, 1_000)
 
-  const [containerRef, containerWidth] = useContainer()
-  const [tileWidth, setTileWidth] = useState<number>()
+  const { ref: containerRef, width: containerWidth } = useContainer()
+  const [tileHeight, setTileHeight] = useState<number>()
 
-  const [open, setOpen] = useState(false)
+  const [isInfoOpen, setIsInfoOpen] = useState(true)
+  const [isEndScreenOpen, setIsEndScreenOpen] = useState(false)
+
+  useEffect(() => {
+    if (autoSolveEnded) {
+      setIsEndScreenOpen(true)
+    }
+  }, [autoSolveEnded])
 
   if (!groupings) {
     return <div>
@@ -454,22 +484,34 @@ export default function App() {
   }
   return (
     <div className="h-screen w-screen flex flex-col">
-      {/* <InfoDialog /> */}
+      <InfoModal isOpen={isInfoOpen} handleClose={() => setIsInfoOpen(false)} />
+      <EndScreenModal isOpen={isEndScreenOpen} handleClose={() => setIsEndScreenOpen(false)}
+        emojiRepresentation={emojiRepresentation}
+      />
       {/* <InfoModal open={open}/> */}
-      {/* <div className="px-5 py-2 bg-slate-200">
+      <div className="px-5 py-2 bg-slate-200">
         <p className="text-sm italic mx-5 text-center">
-          <a className="underline font-bold" href="https://www.leer.org/donar">
-            apoyá
-          </a>{' '}
-          la lectura de los boludles más pequeños
+          Envianos sugerencias o comentarios a nuestro {' '}
+          <a className="underline font-bold" href="https://twitter.com/boludle">
+            Twitter!
+          </a>
         </p>
-      </div> */}
+      </div>
+      <div className="px-5 py-2 bg-amber-200">
+        <p className="text-sm italic mx-5 text-center">
+          Por los creadores de {' '}
+          <a className="underline font-bold" href="https://boludle.com/">
+            Boludle.com
+          </a>
+        </p>
+      </div>
       {/* <div className='flex w-full justify-center -translate-x-2'>
         <img src={tango2} width={300}/>
       </div> */}
       <div className="mt-10 flex items-center">
         <div className="flex-1"></div>
-        <div className="text-4xl font-argentina">Conexiones</div> <div className='text-4xl font-argentina bg-[#6CACE4] px-2 pb-3 pt-2 mx-2 rounded-sm text-white'>Argentinas</div>
+        <div className="text-3xl font-montserrat">Conexiones</div>
+        <div className='text-3xl font-montserrat  font-bold text-[#6CACE4] mx-2 rounded-sm'>Argentinas</div>
         <div className="flex-1">
           <div className="flex justify-end mr-6">
             {/* <InformationCircleIcon
@@ -499,31 +541,27 @@ export default function App() {
           <div ref={containerRef} className="relative w-full max-w-[500px]" >
             <div className="absolute w-full h-full" >
               <div className="flex flex-col gap-y-2">
-                <SolutionRow solution={solutions.at(0)} height={tileWidth} />
-                <SolutionRow solution={solutions.at(1)} height={tileWidth} />
-                <SolutionRow solution={solutions.at(2)} height={tileWidth} />
-                <SolutionRow solution={solutions.at(3)} height={tileWidth} />
+                <SolutionRow solution={solutions.at(0)} height={tileHeight} />
+                <SolutionRow solution={solutions.at(1)} height={tileHeight} />
+                <SolutionRow solution={solutions.at(2)} height={tileHeight} />
+                <SolutionRow solution={solutions.at(3)} height={tileHeight} />
               </div>
             </div>
             <div className="grid grid-cols-4 gap-2">
-              {tileDatas.map((tileData, index) => <Tile setTileWidth={setTileWidth} tileData={tileData} containerWidth={containerWidth} />)}
+              {tileDatas.map(tileData => <Tile setTileHeight={setTileHeight} tileData={tileData} containerWidth={containerWidth} />)}
             </div>
           </div>
         </div>
       </div>
       <div className='mt-6 flex justify-center w-full gap-2 items-center'>
-        {
-          !gameEnded && <>
-            <div>Intentos restantes:</div>
-            <div className='flex gap-1'>
-              {Array.from(Array(noOfAttemptsRemainingDelayed)).map(_ => <RemainingDot />)}
-            </div>
-
-          </>
-        }
+        <div>Intentos restantes:</div>
+        <div className='flex'>
+          {Array.from(Array(noOfAttemptsRemainingDelayed)).map(_ => <RemainingDot active />)}
+          {Array.from(Array(4 - noOfAttemptsRemainingDelayed)).map(_ => <RemainingDot />)}
+        </div>
       </div>
       <div className='mt-6 gap-x-4 flex justify-center'>
-        <ButtonButton label='Shuffle' onClick={shuffle} active/>
+        <ButtonButton label='Shuffle' onClick={shuffle} active />
         <ButtonButton label='Deseleccionar' onClick={deselectAll} active={canDeselect} />
         <ButtonButton label='Enviar' onClick={submit} active={canSubmit} filled />
       </div>

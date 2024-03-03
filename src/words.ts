@@ -22,19 +22,20 @@ export function useGroupings(date: Date) {
       const dateString = date.toISOString().split('T')[0]
       const rowsForDate = data.filter(row => row.date === dateString)
       if (rowsForDate.length === 4) {
+        console.log(rowsForDate)
         setGroupings(
-          rowsForDate.map( row => ({
+          rowsForDate.map(row => ({
             group: row.group,
             difficulty: Number(row.difficulty),
             words: [row.word1, row.word2, row.word3, row.word4]
           }))
         )
-      } 
-    } catch(error) {
-  
+      }
+    } catch (error) {
+
     }
   }
-  
+
   return groupings
 }
 
@@ -70,3 +71,30 @@ export const emptyGrouping: Grouping[] = [
     words: ["1", "2", "3", "4"]
   }
 ]
+
+export function difficultyToEmoji(difficulty: number): string {
+  if (difficulty === 1) {
+    return '🟨'
+  } else if (difficulty === 2) {
+    return '🟩'
+  } else if (difficulty === 3) {
+    return '🟦'
+  } else if (difficulty === 4) {
+    return '🟪'
+  }
+  return ''
+}
+
+export function difficultyToColor(difficulty: number) {
+  if (difficulty === 1) {
+    return 'rgb(247,222,108)'
+  } else if (difficulty === 2) {
+    return 'rgb(160,195,90)'
+  } else if (difficulty === 3) {
+    return 'rgb(175,196,239)'
+  } else if (difficulty === 4) {
+    return 'rgb(184,130,198)'
+  }
+
+  return 'black'
+}

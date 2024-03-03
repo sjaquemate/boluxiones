@@ -1,21 +1,9 @@
 import { twMerge } from "tailwind-merge"
 import { Solution } from "../App"
 import { useDelay } from "../hooks"
+import { difficultyToColor } from "../words"
 
 
-function difficultyToColor(difficulty: number) {
-  if (difficulty === 1) {
-    return 'rgba(184,130,198,1)'
-  } else if (difficulty === 2) {
-    return 'rgba(160,195,90,1)'
-  } else if (difficulty === 3) {
-    return 'rgba(175,196,239,1)'
-  } else if (difficulty === 4) {
-    return 'rgba(247,222,108,1)'
-  }
-
-  return 'black'
-}
 
 export function SolutionRow({ height, solution }: { height?: number, solution?: Solution }) {
 
