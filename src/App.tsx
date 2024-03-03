@@ -488,16 +488,15 @@ export default function App() {
       <EndScreenModal isOpen={isEndScreenOpen} handleClose={() => setIsEndScreenOpen(false)}
         emojiRepresentation={emojiRepresentation}
       />
-      {/* <InfoModal open={open}/> */}
-      <div className="px-5 py-2 bg-slate-200">
+      {/* <div className="px-5 py-2 bg-slate-200">
         <p className="text-sm italic mx-5 text-center">
           Envianos sugerencias o comentarios a nuestro {' '}
           <a className="underline font-bold" href="https://twitter.com/boludle">
             Twitter!
           </a>
         </p>
-      </div>
-      <div className="px-5 py-2 bg-amber-200">
+      </div> */}
+      <div className="px-5 py-2 bg-slate-200">
         <p className="text-sm italic mx-5 text-center">
           Por los creadores de {' '}
           <a className="underline font-bold" href="https://boludle.com/">
@@ -508,18 +507,21 @@ export default function App() {
       {/* <div className='flex w-full justify-center -translate-x-2'>
         <img src={tango2} width={300}/>
       </div> */}
-      <div className="mt-10 flex items-center">
-        <div className="flex-1"></div>
-        <div className="text-3xl font-montserrat">Conexiones</div>
-        <div className='text-3xl font-montserrat  font-bold text-[#6CACE4] mx-2 rounded-sm'>Argentinas</div>
-        <div className="flex-1">
-          <div className="flex justify-end mr-6">
+      <div className="mt-6 flex items-center justify-center">
+        {/* <div className="flex-1"></div> */}
+        <div className='flex text-2xl sm:text-3xl font-montserrat'>
+
+        <div className="">Conexiones&nbsp;</div>
+        <div className='  font-bold text-[#6CACE4] rounded-sm'>Argentinas</div>
+        </div>
+        {/* <div className="flex-1"> */}
+          {/* <div className="flex justify-end mr-6"> */}
             {/* <InformationCircleIcon
               className="h-6 w-6 cursor-pointer"
               onClick={() => setOpen(true)}
             /> */}
-          </div>
-        </div>
+          {/* </div> */}
+        {/* </div> */}
       </div>
       {/* <div className="mt-0 flex justify-center items-center text-neutral-300 ">
         _____________________________________________________________-
