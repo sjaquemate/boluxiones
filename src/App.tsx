@@ -370,13 +370,14 @@ function oneAway(words: string[], groupings: Grouping[]): boolean {
   })
 }
 
-function ButtonButton({ label, onClick, active, filled }: { label: string, onClick: () => void, active: boolean, filled?: boolean }) {
+function ButtonButton({ label, onClick, active, filled, timeoutAfterClick }:
+  { label: string, onClick: () => void, active: boolean, filled?: boolean, timeoutAfterClick: number }) {
   const [justClicked, setJustClicked] = useState(false)
   const disabled = !active || justClicked
 
   useEffect(() => {
     if (justClicked) {
-      setTimeout(() => setJustClicked(false), 2_500)
+      setTimeout(() => setJustClicked(false), timeoutAfterClick)
     }
   }, [justClicked])
 
@@ -443,6 +444,12 @@ function getDate(dayahead: boolean) {
   return date
 }
 
+function InfoIcon() {
+  return <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+    <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
+  </svg>
+
+}
 export default function App() {
 
 
@@ -453,7 +460,7 @@ export default function App() {
   const { tileDatas, shuffle, canDeselect, deselectAll, submit, canSubmit, solutions,
     noOfAttemptsRemaining, gameEnded, autoSolveEnded, emojiRepresentation } = useTileDatas(
       groupings ?? emptyGrouping, // to fill tiles and all 
-      false,
+      true,
       triggerAlert
     )
 
@@ -508,24 +515,19 @@ export default function App() {
         <img src={tango2} width={300}/>
       </div> */}
       <div className="mt-6 flex items-center justify-center">
-        {/* <div className="flex-1"></div> */}
+        <div className="flex-1"></div>
         <div className='flex text-2xl sm:text-3xl font-montserrat'>
-
-        <div className="">Conexiones&nbsp;</div>
-        <div className='  font-bold text-[#6CACE4] rounded-sm'>Argentinas</div>
+          <div className="">Conexiones&nbsp;</div>
+          <div className='  font-bold text-[#6CACE4] rounded-sm'>Argentinas</div>
         </div>
-        {/* <div className="flex-1"> */}
-          {/* <div className="flex justify-end mr-6"> */}
-            {/* <InformationCircleIcon
-              className="h-6 w-6 cursor-pointer"
-              onClick={() => setOpen(true)}
-            /> */}
-          {/* </div> */}
-        {/* </div> */}
+        <div className="flex-1">
+          <div className="flex justify-end mr-4">
+            <div className="h-6 w-6 cursor-pointer" onClick={() => setIsInfoOpen(true)}>
+              <InfoIcon />
+            </div>
+          </div>
+        </div>
       </div>
-      {/* <div className="mt-0 flex justify-center items-center text-neutral-300 ">
-        _____________________________________________________________-
-      </div> */}
       <div className="mt-4 flex justify-center items-center ">
         <div className='relative flex items-center gap-1'>
           <span>
@@ -563,9 +565,9 @@ export default function App() {
         </div>
       </div>
       <div className='mt-6 gap-x-4 flex justify-center'>
-        <ButtonButton label='Shuffle' onClick={shuffle} active />
-        <ButtonButton label='Deseleccionar' onClick={deselectAll} active={canDeselect} />
-        <ButtonButton label='Enviar' onClick={submit} active={canSubmit} filled />
+        <ButtonButton label='Shuffle' onClick={shuffle} active timeoutAfterClick={100} />
+        <ButtonButton label='Deseleccionar' onClick={deselectAll} active={canDeselect} timeoutAfterClick={100} />
+        <ButtonButton label='Enviar' onClick={submit} active={canSubmit} filled timeoutAfterClick={2_500} />
       </div>
     </div>
   )

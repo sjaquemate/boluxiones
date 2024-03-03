@@ -76,9 +76,9 @@ export const InfoModal = ({ isOpen, handleClose }: Props) => {
         </div>
 
 
-        <p className="mt-6 italic text-center">
-          Por los creadores de <a className='underline font-bold' href="https://www.boludle.com">Boludle.com</a>. Contactanos en <a className='underline font-bold' href="https://www.twitter.com/boludle">Twitter</a> o <a className='underline font-bold' href="mailto:mili@boludle.com">mili@boludle.com</a>. 
-        </p>
+        <div className="mt-6 italic text-center">
+          Por los creadores de <span className='underline font-bold' onClick={() => window.open("https://www.boludle.com")}>Boludle.com</span>. Contactanos en <span className='underline font-bold' onClick={() => window.open("https://www.twitter.com/boludle")}>Twitter</span> o <span className='underline font-bold' >mili@boludle.com</span>. 
+        </div>
       </div>
     </BaseModal>
   )
