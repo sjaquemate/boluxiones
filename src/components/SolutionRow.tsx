@@ -1,9 +1,8 @@
 import { twMerge } from "tailwind-merge"
-import { Solution } from "../App"
 import { useDelay } from "../hooks"
-import { difficultyToColor } from "../words"
+import { Grouping } from "../useGameState"
 
-
+export type Solution = Grouping
 
 export function SolutionRow({ height, solution }: { height?: number, solution?: Solution }) {
 
@@ -26,4 +25,18 @@ export function SolutionRow({ height, solution }: { height?: number, solution?: 
       </div>
     </div>
   )
+}
+
+function difficultyToColor(difficulty: number) {
+  if (difficulty === 1) {
+    return 'rgb(247,222,108)'
+  } else if (difficulty === 2) {
+    return 'rgb(160,195,90)'
+  } else if (difficulty === 3) {
+    return 'rgb(175,196,239)'
+  } else if (difficulty === 4) {
+    return 'rgb(184,130,198)'
+  }
+
+  return 'black'
 }

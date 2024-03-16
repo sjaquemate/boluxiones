@@ -1,5 +1,5 @@
-import { Tile } from './App'
-import { BaseModal } from './BaseModal'
+import { BaseModal } from '../BaseModal'
+import { Tile } from '../Tile'
 
 function DemoTile({ word, selected = false }: { word: string, selected?: boolean }) {
   return <Tile setTileHeight={() => { }} tileData={{
@@ -32,8 +32,8 @@ export const InfoModal = ({ isOpen, handleClose }: Props) => {
           • Podés cometer cuatro errores como máximo.
         </p>
 
-        <p >
-          Insultos infantiles
+        <p className='mt-4'>
+          Ejemplo: grupo de palabras de insultos infantiles
         </p>
         <div className="scale-[0.9] grid grid-cols-4 gap-2 cursor-none">
           <DemoTile word="Jacarandá" />
@@ -55,23 +55,23 @@ export const InfoModal = ({ isOpen, handleClose }: Props) => {
         </div>
 
         <p className='italic text-center'>
-          ¡Ojo, tené cuidado, pueden haber palabras que parecen pertenecer a múltiples categorías!
+          ¡Ojo, pueden haber palabras que parezcan pertenecer a múltiples categorías!
         </p>
         <p className='mt-4'>
           Cada grupo que vas descubriendo está asociado a un color que indica su dificultad:
         </p>
         <div >
           <p>
-            🟨 Dificultad Baja
+            🟨 Baja
           </p>
           <p>
-            🟩 Dificultad Media
+            🟩 Media
           </p>
           <p>
-            🟦 Dificultad Alta
+            🟦 Alta
           </p>
           <p>
-            🟪 Dificultad Muy Alta
+            🟪 Muy Alta
           </p>
         </div>
 

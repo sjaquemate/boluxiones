@@ -1,415 +1,25 @@
 import { twMerge } from 'tailwind-merge';
 // import { InformationCircleIcon } from '@heroicons/react/outline';
-import { useEffect, useRef, useState } from 'react';
-import { shuffleSubsetInplace } from './arrayUtil';
+import { useEffect, useState } from 'react';
 import { SolutionRow } from './components/SolutionRow';
 import Mate from './assets/mate.png'
-import tango2 from './assets/tango2.jpg'
-import { useDelay } from './hooks';
-import { Grouping, difficultyToEmoji, emptyGrouping, useGroupings } from './words';
-import { InfoModal } from './InfoModal';
-import { EndScreenModal } from './EndScreenModal';
-
-const orderedPositions = createOrderedPositions()
-
-function createOrderedPositions() {
-  const orderedPositions = []
-  for (let i = 0; i < 4; i++) {
-    for (let j = 0; j < 4; j++) {
-      orderedPositions.push({ i: i, j: j })
-    }
-  }
-  return orderedPositions
-}
-
-function getOrderedIndexOfPosition(position: Position) {
-  return orderedPositions.findIndex(({ i, j }) => i === position.i && j === position.j)!
-}
-
-function getFontSize(wordLength: number) {
-  if (wordLength < 8) {
-    return "text-md"
-  } else if (wordLength < 11) {
-    return "text-xs"
-  } else if (wordLength < 14) {
-    return "text-[10px]"
-  } else {
-    return "text-[7px]"
-  }
-}
-
-export function Tile({ setTileHeight, tileData, containerWidth }: { setTileHeight: (height: number) => void, tileData: TileData, containerWidth?: number }) {
-
-  const { word, status, selected, setSelected, dx, dy } = tileData
-  const fontSize = getFontSize(Math.max(...word.split('\n').map(partial => partial.length)))
-
-  const { ref: tileRef, height: tileHeight, width: tileWidth } = useContainer()
-
-  useEffect(() => {
-    if (tileHeight) {
-      setTileHeight(tileHeight)
-    }
-  }, [tileHeight])
-
-  const onClick = () => {
-    setSelected(!selected)
-  }
-
-  const singleTranslation = containerWidth && tileWidth ? tileWidth + (containerWidth - 4 * tileWidth) / 3 : 0
-  const translateX = (dx) * singleTranslation
-  const translateY = (dy) * singleTranslation
-
-  const zIndex = 16
-
-  let animation = ''
-  if (status === "attempt") {
-    animation = 'animate-bounce-attempt'
-  } else if (status === "wrong") {
-    animation = 'animate-shake-wrong'
-  }
-
-  return <div ref={tileRef} key={word} onClick={onClick}
-    className={twMerge("cursor-pointer aspect-square transition")}
-    style={{
-      transform: `translate(${translateX}px, ${translateY}px)`,
-      transitionDuration: `400ms`,
-      transitionDelay: `1000ms`,
-      opacity: status === 'solved' ? 0 : 1,
-      zIndex: zIndex
-    }}
-  >
-    <div className={twMerge(
-      "w-full h-full rounded-sm transition",
-      selected ? 'bg-[#6CACE4]' : 'bg-neutral-200',
-      animation
-    )}
-      style={{
-
-      }}>
-
-      <div key={word} className={
-        twMerge('flex h-full w-full items-center justify-center font-bold uppercase select-none whitespace-pre text-center',
-          fontSize,
-          selected ? 'text-white' : 'text-black'
-        )}>{word}</div>
-    </div>
-  </div>
-}
-
-type TileData = {
-  word: string
-  selected: boolean
-  status: TileTransitionStatus
-  setSelected: (selected: boolean) => void
-  dx: number
-  dy: number
-}
-
-type Position = {
-  i: number,
-  j: number
-}
-
-export type Attempt = {
-  correct: boolean
-  words: string[]
-  by: 'auto' | 'user'
-}
-
-export type Solution = Grouping
-
-type TileTransitionStatus = "solved" | "attempt" | "wrong" | undefined
-
-function useTileDatas(groupings: Grouping[], shuffleInitial: boolean, oneAwayFn: () => void) {
-
-  const [data, setData] = useState<{ word: string, status: TileTransitionStatus }[]>(() => [])
-  const wordList = data.flatMap(d => d.word)
-  const [gameEnded, setGameEnded] = useState(false)
-  const [positions, setPositions] = useState<Position[]>(() => orderedPositions)
-  const [selectedWords, setSelectedWords] = useState<string[]>(() => [])
-  const [attempts, setAttempts] = useState<Attempt[]>(() => [])
-
-  const words = data.map(d => d.word)
-
-  const correctAttempts = attempts.filter(attempt => attempt.correct)
-  const numberOfIncorrectAttempts = attempts.length - correctAttempts.length
-  const noOfAttemptsRemaining = Math.max(4 - numberOfIncorrectAttempts, 0)
-
-  const wordsOutOfPlay = correctAttempts.flatMap(attempt => attempt.words)
-  const wordsInPlay = wordList.filter(word => !wordsOutOfPlay.includes(word))
-
-  const solutions: Solution[] = correctAttempts.map(attempt => (groupings.find(grouping => grouping.group === areSameGroup(attempt.words, groupings)!)!))
-  const noOfSolutions = solutions.length
-
-  useEffect(() => {
-    const words = groupings.flatMap(grouping => grouping.words)
-    const shuffledWords = shuffleInitial ? shuffleSubsetInplace([...words], words.map((_, index) => index)) : [...words]
-    setData(() => [...shuffledWords].map(word => ({ word: word, status: undefined })))
-  }, [groupings])
-
-  useEffect(() => {
-    if (noOfAttemptsRemaining === 0 || solutions.length === 4) {
-      setGameEnded(true)
-    }
-  }, [noOfAttemptsRemaining, solutions])
-
-  useEffect(() => {
-    if (gameEnded) {
-      autoSolve()
-    }
-  }, [gameEnded])
-
-  function addAttempt(attempt: Attempt) {
-    setAttempts(prev => [...prev, attempt])
-  }
-
-  function setTileStatus(word: string, status: TileTransitionStatus) {
-    setData(data => data.map(d => d.word === word ? { ...d, status: status } : d))
-  }
-
-  function shuffle() {
-    const indicesInPlay = wordsInPlay.map(value => words.findIndex(v => v === value))
-    setData((data) => shuffleSubsetInplace([...data], indicesInPlay))
-  }
-
-  function deselectAll() {
-    setSelectedWords(() => [])
-  }
-
-  function submit(submittedWords: string[], autoAttempt: boolean = false) {
-    if (submittedWords.length !== 4) return
-
-    const correct = !!areSameGroup(submittedWords, groupings)
-    addAttempt({ correct: correct, words: submittedWords, by: autoAttempt ? 'auto' : 'user' })
-  }
-
-  useEffect(() => {
-    const lastAttempt = attempts.at(-1)
-    if (!lastAttempt) return
-
-    if (lastAttempt.correct) {
-      const rowIndex = Math.min(noOfSolutions - 1, 3)
-      toTop(lastAttempt.words, rowIndex)
-      setTimeout(() => setTileStatus(lastAttempt.words[0], "attempt"), 0)
-      setTimeout(() => setTileStatus(lastAttempt.words[1], "attempt"), 100)
-      setTimeout(() => setTileStatus(lastAttempt.words[2], "attempt"), 200)
-      setTimeout(() => setTileStatus(lastAttempt.words[3], "attempt"), 300)
-      setTimeout(() => setTileStatus(lastAttempt.words[0], "solved"), 1_000)
-      setTimeout(() => setTileStatus(lastAttempt.words[1], "solved"), 1_000)
-      setTimeout(() => setTileStatus(lastAttempt.words[2], "solved"), 1_000)
-      setTimeout(() => setTileStatus(lastAttempt.words[3], "solved"), 1_000)
-      setTimeout(() => deselectAll(), 2_000)
-    } else if (oneAway(lastAttempt.words, groupings)) {
-      oneAwayFn()
-      setTimeout(() => setTileStatus(lastAttempt.words[0], "attempt"), 0)
-      setTimeout(() => setTileStatus(lastAttempt.words[1], "attempt"), 100)
-      setTimeout(() => setTileStatus(lastAttempt.words[2], "attempt"), 200)
-      setTimeout(() => setTileStatus(lastAttempt.words[3], "attempt"), 300)
-      setTimeout(() => setTileStatus(lastAttempt.words[0], "wrong"), 1_000)
-      setTimeout(() => setTileStatus(lastAttempt.words[1], "wrong"), 1_000)
-      setTimeout(() => setTileStatus(lastAttempt.words[2], "wrong"), 1_000)
-      setTimeout(() => setTileStatus(lastAttempt.words[3], "wrong"), 1_000)
-    } else {
-      setTimeout(() => setTileStatus(lastAttempt.words[0], "attempt"), 0)
-      setTimeout(() => setTileStatus(lastAttempt.words[1], "attempt"), 100)
-      setTimeout(() => setTileStatus(lastAttempt.words[2], "attempt"), 200)
-      setTimeout(() => setTileStatus(lastAttempt.words[3], "attempt"), 300)
-      setTimeout(() => setTileStatus(lastAttempt.words[0], "wrong"), 1_000)
-      setTimeout(() => setTileStatus(lastAttempt.words[1], "wrong"), 1_000)
-      setTimeout(() => setTileStatus(lastAttempt.words[2], "wrong"), 1_000)
-      setTimeout(() => setTileStatus(lastAttempt.words[3], "wrong"), 1_000)
-    }
-  }, [attempts])
-
-  function wordToPosition(positions: Position[], srcWord: string, dstPosition: Position): Position[] {
-
-    const srcIndex = words.findIndex(word => word === srcWord)
-    const srcPosition = positions.at(srcIndex)!
-
-    return positions.map((position, index) => {
-      if (dstPosition.i === position.i && dstPosition.j === position.j) {
-        return srcPosition
-      } else if (srcIndex === index) {
-        return dstPosition
-      } else {
-        return position
-      }
-    })
-  }
-
-  function toTop(words: string[], row: number) {
-    let currentPositions = [...positions]
-    currentPositions = wordToPosition(currentPositions, words[0], { i: row, j: 0 })
-    currentPositions = wordToPosition(currentPositions, words[1], { i: row, j: 1 })
-    currentPositions = wordToPosition(currentPositions, words[2], { i: row, j: 2 })
-    currentPositions = wordToPosition(currentPositions, words[3], { i: row, j: 3 })
-    setPositions(currentPositions)
-  }
-
-  function addSelectedWord(word: string) {
-    setSelectedWords(prev => {
-      if (prev.length >= 4) {
-        return prev
-      }
-      return [...prev, word]
-    })
-  }
-
-  function removeSelectedWord(word: string) {
-    setSelectedWords(prev => prev.filter(prev => prev !== word))
-  }
-
-  function findUnsolvedGroupings() {
-    return groupings.filter(grouping => !solutions.includes(grouping))
-  }
-
-  const [autoSolveEnded, setAutoSolveEnded] = useState(false)
-
-  async function autoSolve() {
-
-    const unsolvedGroupings = findUnsolvedGroupings()
-
-    for (const grouping of unsolvedGroupings) {
-      await new Promise(resolve => setTimeout(() => {
-        deselectAll()
-        setSelectedWords(grouping.words)
-        submit(grouping.words, true)
-        return resolve(true)
-      }, 3_000));
-    }
-    setTimeout(() => setAutoSolveEnded(true), 2_000)
-  }
-
-  function wordToDifficulty(word: string): number {
-    return groupings.filter(grouping => grouping.words.includes(word)).at(0)!.difficulty
-  }
-
-  function getEmojiRepresentation() {
-    const userAttempts = attempts.filter(attempt => attempt.by === 'user')
-    return userAttempts.map(attempt =>
-      attempt.words.map(word => difficultyToEmoji(wordToDifficulty(word)))
-    )
-  }
-
-  const emojiRepresentation = getEmojiRepresentation()
-
-
-  // function setSelectedWordsIncrementalDelay(words: string[], )
-
-  const tileDatas = data.map((d, index) => {
-    const word = d.word
-    return {
-      word: word,  // data
-      status: d.status,  // data
-      selected: selectedWords.includes(word),  // derived data
-      setSelected: (selected: boolean) => {  // actions
-        if (selected && wordsInPlay.includes(word)) {
-          addSelectedWord(word)
-        } else {
-          removeSelectedWord(word)
-        }
-      },
-      dx: positions.at(index)!.j - orderedPositions.at(index)!.j,
-      dy: positions.at(index)!.i - orderedPositions.at(index)!.i,
-    }
-  })
-
-  const canDeselect = !gameEnded && selectedWords.length > 0
-  const canSubmit = !gameEnded && selectedWords.length === 4
-  return {
-    tileDatas: tileDatas,
-    shuffle: shuffle,
-    canDeselect: canDeselect,
-    deselectAll: deselectAll,
-    canSubmit: canSubmit,
-    submit: () => submit(selectedWords),
-    emojiRepresentation: emojiRepresentation,
-    solutions: solutions,
-    noOfAttemptsRemaining: noOfAttemptsRemaining,
-    gameEnded: gameEnded,
-    autoSolveEnded: autoSolveEnded
-  }
-}
-
-function useContainer() {
-  const ref = useRef<HTMLDivElement>(null)
-  const [width, setWidth] = useState<number>()
-  const [height, setHeight] = useState<number>()
-
-  useEffect(() => {
-    setWidth(ref.current?.offsetWidth)
-    setHeight(ref.current?.offsetHeight)
-  }, [ref, ref.current])
-
-  return {
-    ref: ref,
-    width: width,
-    height: height
-  } as const
-}
-
-
-function findGroup(word: string, groupings: Grouping[]) {
-  return groupings.find(grouping => grouping.words.includes(word))!.group
-}
-
-function areSameGroup(words: string[], groupings: Grouping[]): string | undefined {
-  const groups = words.map(word => findGroup(word, groupings))
-  if (new Set(groups).size === 1) {
-    return groups[0]
-  }
-  return undefined
-}
-
-function oneAway(words: string[], groupings: Grouping[]): boolean {
-  const groups = words.map(word => findGroup(word, groupings))
-  const groupSet = new Set(groups)
-  return groupSet.size === 2 && Array.from(groupSet.values()).every(word => {
-    const numMatches = groups.filter(w => w === word).length
-    return numMatches === 1 || numMatches === 3
-  })
-}
-
-function ButtonButton({ label, onClick, active, filled, timeoutAfterClick }:
-  { label: string, onClick: () => void, active: boolean, filled?: boolean, timeoutAfterClick: number }) {
-  const [justClicked, setJustClicked] = useState(false)
-  const disabled = !active || justClicked
-
-  useEffect(() => {
-    if (justClicked) {
-      setTimeout(() => setJustClicked(false), timeoutAfterClick)
-    }
-  }, [justClicked])
-
-  function submit() {
-    if (disabled) return
-    setJustClicked(true)
-    onClick()
-  }
-
-
-  return <button
-    onClick={submit}
-    className={twMerge(
-      "rounded-3xl font-bold text-center  py-2 px-4 border-solid border-2",
-      "transition duration-300",
-      (filled && !disabled) ? "bg-black text-white" : "bg-white",
-      disabled ? "text-neutral-400 border-neutral-400" : "border-black",
-    )}>
-    {label}
-  </button>
-}
+import { useAlertState, useContainer, useDelay } from './hooks';
+import { emptyGrouping, useGroupings } from './words';
+import { InfoModal } from './modals/InfoModal';
+import { EndScreenModal } from './modals/EndScreenModal';
+import { useGameState } from './useGameState';
+import { InfoIcon } from './components/InfoIcon';
+import { Tile } from './Tile';
+import { Button } from './components/Button';
 
 function RemainingDot({ active }: { active?: boolean }) {
   const color = active ? 'text-yellow-400' : 'text-neutral-400'
   return <svg className={twMerge("w-4 h-4 ms-1", color)} xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 20">
     <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z" />
   </svg>
-  // return <div className='bg-yellow-400   w-3 h-3 rounded-full'></div>
-  // return <div>☀️</div>
 }
 
-function Alert({ visible }: { visible: boolean }) {
+function Alert({ label, visible }: { label: string, visible: boolean }) {
   return (
     <div className={twMerge(
       "absolute left-0 right-0 bottom-0 top-0 transition duration-500",
@@ -417,7 +27,7 @@ function Alert({ visible }: { visible: boolean }) {
     )}>
       <div className='flex flex-col items-center'>
         <div className='text-sm bg-black px-2 py-1 rounded-sm text-white font-bold'>
-          Estás a una palabra...
+          {label}
         </div>
         {/* <div className="border-solid border-t-black border-t-4 border-x-4 border-x-transparent  border-b-0" /> */}
       </div>
@@ -425,15 +35,6 @@ function Alert({ visible }: { visible: boolean }) {
   )
 }
 
-function useEnableForMS(initial: boolean, delay: number, msToDisable: number) {
-  const [value, setValue] = useState(initial)
-  const triggerEnable = () => {
-    setTimeout(() => setValue(true), delay)
-    setTimeout(() => setValue(false), msToDisable)
-  }
-
-  return [value, triggerEnable] as const
-}
 
 
 function getDate(dayahead: boolean) {
@@ -444,26 +45,32 @@ function getDate(dayahead: boolean) {
   return date
 }
 
-function InfoIcon() {
-  return <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-    <path strokeLinecap="round" strokeLinejoin="round" d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z" />
-  </svg>
 
-}
 export default function App() {
 
 
   const groupings = useGroupings(getDate(false))
 
-  const [alertVisisble, triggerAlert] = useEnableForMS(false, 500, 2_000)
+  const { label, active, triggerAlert } = useAlertState()
 
-  const { tileDatas, shuffle, canDeselect, deselectAll, submit, canSubmit, solutions,
-    noOfAttemptsRemaining, gameEnded, autoSolveEnded, emojiRepresentation } = useTileDatas(
-      groupings ?? emptyGrouping, // to fill tiles and all 
-      true,
-      triggerAlert
-    )
-
+  const {
+    tileDatas,
+    shuffle,
+    canDeselect,
+    deselectAll,
+    submit,
+    canSubmit,
+    solutions,
+    noOfAttemptsRemaining,
+    gameEnded,
+    gameWon,
+    autoSolveEnded,
+    emojiRepresentation
+  } = useGameState({
+    groupings: groupings ?? emptyGrouping,
+    shuffleInitial: true,
+    oneAwayFn: () => triggerAlert("Estás a una palabra...", 500, 2_000)
+  })
 
   const noOfAttemptsRemainingDelayed = useDelay(noOfAttemptsRemaining, 1_000)
 
@@ -479,6 +86,10 @@ export default function App() {
     }
   }, [autoSolveEnded])
 
+  function share() {
+    setIsEndScreenOpen(true)
+  }
+
   if (!groupings) {
     return <div>
       <div className="w-screen h-screen flex justify-center items-center">
@@ -492,8 +103,12 @@ export default function App() {
   return (
     <div className="h-screen w-screen flex flex-col">
       <InfoModal isOpen={isInfoOpen} handleClose={() => setIsInfoOpen(false)} />
-      <EndScreenModal isOpen={isEndScreenOpen} handleClose={() => setIsEndScreenOpen(false)}
+      <EndScreenModal
+        isOpen={isEndScreenOpen}
+        handleClose={() => setIsEndScreenOpen(false)}
         emojiRepresentation={emojiRepresentation}
+        gameWon={gameWon}
+        onShare={() => triggerAlert("Copiado", 0, 5_000)}
       />
       {/* <div className="px-5 py-2 bg-slate-200">
         <p className="text-sm italic mx-5 text-center">
@@ -516,7 +131,7 @@ export default function App() {
       </div> */}
       <div className="mt-6 flex items-center justify-center">
         <div className="flex-1"></div>
-        <div className='flex text-2xl sm:text-3xl font-montserrat'>
+        <div className='flex text-2xl sm:text-3xl font-montserrat select-none'>
           <div className="">Conexiones&nbsp;</div>
           <div className='  font-bold text-[#6CACE4] rounded-sm'>Argentinas</div>
         </div>
@@ -531,12 +146,12 @@ export default function App() {
       <div className="mt-4 flex justify-center items-center ">
         <div className='relative flex items-center gap-1'>
           <span>
-            Creá cuatro grupos de cuatro!
+            Creá cuatro grupos de cuatro palabras!
           </span>
           {/* <div className='flex w-full justify-center -translate-x-2'> */}
           <img src={Mate} className='w-6' />
           {/* </div> */}
-          <Alert visible={alertVisisble} />
+          <Alert label={label} visible={active} />
 
         </div>
       </div>
@@ -565,9 +180,17 @@ export default function App() {
         </div>
       </div>
       <div className='mt-6 gap-x-4 flex justify-center'>
-        <ButtonButton label='Shuffle' onClick={shuffle} active timeoutAfterClick={100} />
-        <ButtonButton label='Deseleccionar' onClick={deselectAll} active={canDeselect} timeoutAfterClick={100} />
-        <ButtonButton label='Enviar' onClick={submit} active={canSubmit} filled timeoutAfterClick={2_500} />
+        {
+          autoSolveEnded ? (
+            <Button label='Compartir' onClick={share} active filled timeoutAfterClick={100} />
+          ) : (
+            <>
+              <Button label='Shuffle' onClick={shuffle} active timeoutAfterClick={100} />
+              <Button label='Deseleccionar' onClick={deselectAll} active={canDeselect} timeoutAfterClick={100} />
+              <Button label='Enviar' onClick={submit} active={canSubmit} filled timeoutAfterClick={2_500} />
+            </>
+          )
+        }
       </div>
     </div>
   )

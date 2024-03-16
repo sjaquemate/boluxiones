@@ -5,17 +5,19 @@ const parser = new UAParser()
 const browser = parser.getBrowser()
 const device = parser.getDevice()
 
+const GAME_EPOCH = new Date('03/16/2024')
+
 export const shareStatus = (
   emojiRepresentation: string[][],
   handleShareToClipboard: () => void
 ) => {
   const textToShare = 
-`Conexiones Argentinas
-Puzzle #??? 
+`ConexionesArgentinas.com.ar
+
+Día #${getPuzzleNumber()}
 ${emojiRepresentation.map(row => '\n' + row)}
       
-???.com
-#conexionesargentinas`
+#ConexionesArgentinas`
 
   const shareData = { text: textToShare }
 
@@ -36,6 +38,12 @@ ${emojiRepresentation.map(row => '\n' + row)}
   }
 }
 
+export function getPuzzleNumber() {
+  const differenceInSeconds = (new Date()).getTime() - GAME_EPOCH.getTime();
+  const differenceInDays = Math.floor(differenceInSeconds / (1000 * 3600 * 24));
+  return differenceInDays
+}
+
 const attemptShare = (shareData: object) => {
   return (
     // Deliberately exclude Firefox Mobile, because its Web Share API isn't working correctly
@@ -46,3 +54,4 @@ const attemptShare = (shareData: object) => {
     navigator.share
   )
 }
+

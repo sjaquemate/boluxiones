@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react"
-
-export type Grouping = {
-  group: string
-  difficulty: number
-  words: string[]
-}
+import { Grouping } from "./useGameState"
 
 export function useGroupings(date: Date) {
 
@@ -72,29 +67,3 @@ export const emptyGrouping: Grouping[] = [
   }
 ]
 
-export function difficultyToEmoji(difficulty: number): string {
-  if (difficulty === 1) {
-    return '🟨'
-  } else if (difficulty === 2) {
-    return '🟩'
-  } else if (difficulty === 3) {
-    return '🟦'
-  } else if (difficulty === 4) {
-    return '🟪'
-  }
-  return ''
-}
-
-export function difficultyToColor(difficulty: number) {
-  if (difficulty === 1) {
-    return 'rgb(247,222,108)'
-  } else if (difficulty === 2) {
-    return 'rgb(160,195,90)'
-  } else if (difficulty === 3) {
-    return 'rgb(175,196,239)'
-  } else if (difficulty === 4) {
-    return 'rgb(184,130,198)'
-  }
-
-  return 'black'
-}
