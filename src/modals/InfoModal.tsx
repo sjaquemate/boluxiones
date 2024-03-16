@@ -20,7 +20,7 @@ type Props = {
 export const InfoModal = ({ isOpen, handleClose }: Props) => {
   return (
     <BaseModal title="Cómo jugar" isOpen={isOpen} handleClose={handleClose}>
-      <div className='mx-4 text-sm text-gray-500 text-left'>
+      <div className='text-sm text-gray-500 text-left'>
 
         <p >
           Encontrá grupos de cuatro palabras que tengan algo en común.
@@ -35,7 +35,7 @@ export const InfoModal = ({ isOpen, handleClose }: Props) => {
         <p className='mt-4'>
           Ejemplo: grupo de palabras de insultos infantiles
         </p>
-        <div className="scale-[0.9] grid grid-cols-4 gap-2 cursor-none">
+        <div className="mt-4 grid grid-cols-4 gap-2 cursor-none">
           <DemoTile word="Jacarandá" />
           <DemoTile word="Bobo" selected />
           <DemoTile word="Nacional" />
@@ -54,7 +54,7 @@ export const InfoModal = ({ isOpen, handleClose }: Props) => {
           <DemoTile word="Gato" />
         </div>
 
-        <p className='italic text-center'>
+        <p className='mt-4 italic text-center'>
           ¡Ojo, pueden haber palabras que parezcan pertenecer a múltiples categorías!
         </p>
         <p className='mt-4'>
