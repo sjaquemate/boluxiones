@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "./static/css/main.918a4e81.css",
-    "main.js": "./static/js/main.23d61330.js",
+    "main.js": "./static/js/main.a7bcdbf9.js",
     "static/media/montserrat.ttf": "./static/media/montserrat.7e687123cd4528224ce5.ttf",
     "static/media/argentina.otf": "./static/media/argentina.5917aab9a7777f4baa9f.otf",
     "index.html": "./index.html",
     "main.918a4e81.css.map": "./static/css/main.918a4e81.css.map",
-    "main.23d61330.js.map": "./static/js/main.23d61330.js.map"
+    "main.a7bcdbf9.js.map": "./static/js/main.a7bcdbf9.js.map"
   },
   "entrypoints": [
     "static/css/main.918a4e81.css",
-    "static/js/main.23d61330.js"
+    "static/js/main.a7bcdbf9.js"
   ]
 }

@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { BaseModal } from '../BaseModal'
 import { useTime } from '../hooks'
-import { getPuzzleNumber, shareStatus } from '../share'
+import { EmojiRepresentation, getPuzzleNumber, shareStatus } from '../share'
 import { Button } from '../components/Button'
 
-type EmojiRepresentation = string[][]
 type Props = {
   isOpen: boolean
   handleClose: () => void

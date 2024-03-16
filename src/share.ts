@@ -7,18 +7,20 @@ const device = parser.getDevice()
 
 const GAME_EPOCH = new Date('03/16/2024')
 
+export type EmojiRepresentation = string[][]
+
 export const shareStatus = (
-  emojiRepresentation: string[][],
+  emojiRepresentation: EmojiRepresentation,
   handleShareToClipboard: () => void
 ) => {
   const textToShare = 
-`ConexionesArgentinas.com.ar
-
+  `ConexionesArgentinas.com.ar
+  
 Día #${getPuzzleNumber()}
-${emojiRepresentation.map(row => '\n' + row)}
-      
+${emojiRepresentation.map(row => row.join('')).join('\n')}
+  
 #ConexionesArgentinas`
-
+  
   const shareData = { text: textToShare }
 
   let shareSuccess = false
