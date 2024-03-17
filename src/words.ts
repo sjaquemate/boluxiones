@@ -23,7 +23,7 @@ export function useGroupings(date: Date) {
             group: row.group,
             difficulty: Number(row.difficulty),
             words: [row.word1, row.word2, row.word3, row.word4]
-          }))
+          })).sort((a, b) => a.difficulty - b.difficulty)
         )
       }
     } catch (error) {

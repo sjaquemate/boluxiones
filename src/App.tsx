@@ -37,11 +37,9 @@ function Alert({ label, visible }: { label: string, visible: boolean }) {
 
 
 
-function getDate(dayahead: boolean) {
-  let date = new Date()
-  if (dayahead) {
-    date.setDate(date.getDate() + 1)
-  }
+function getDateArgentina() {
+  const date = new Date() // utc
+  date.setHours(date.getHours() - 3);
   return date
 }
 
@@ -49,7 +47,7 @@ function getDate(dayahead: boolean) {
 export default function App() {
 
 
-  const groupings = useGroupings(getDate(false))
+  const groupings = useGroupings(getDateArgentina())
 
   const { label, active, triggerAlert } = useAlertState()
 
