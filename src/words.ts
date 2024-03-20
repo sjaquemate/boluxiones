@@ -15,9 +15,8 @@ export function useGroupings(date: Date) {
       const response = await fetch("https://opensheet.elk.sh/1KWCELv96If20u8H5_3b4pR0fo4Z8Dd61uxFTCuVas48/solutions-tab")
       const data = (await response.json()) as SheetRow[]
       const dateString = date.toISOString().split('T')[0]
-      const rowsForDate = data.filter(row => row.date === dateString)
+      const rowsForDate = data.filter(row => row.date.trim() === dateString)
       if (rowsForDate.length === 4) {
-        console.log(rowsForDate)
         setGroupings(
           rowsForDate.map(row => ({
             group: row.group,
