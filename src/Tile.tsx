@@ -72,7 +72,7 @@ export function Tile({ setTileHeight, tileData, containerWidth }: { setTileHeigh
   >
     <div className={twMerge(
       "w-full h-full rounded-sm transition",
-      selected ? 'bg-[#6CACE4]' : 'bg-neutral-200',
+      selected ? 'bg-neutral-500' : 'bg-white',
       animation
     )}
       style={{

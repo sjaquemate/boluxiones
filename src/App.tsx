@@ -13,8 +13,8 @@ import { Tile } from './Tile';
 import { Button } from './components/Button';
 
 function RemainingDot({ active }: { active?: boolean }) {
-  const color = active ? 'text-yellow-400' : 'text-neutral-400'
-  return <svg className={twMerge("w-4 h-4 ms-1", color)} xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 20">
+  const color = active ? 'text-yellow-400' : 'text-neutral-600'
+  return <svg className={twMerge("w-5 h-5 ms-1", color)} xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 22 20">
     <path d="M20.924 7.625a1.523 1.523 0 0 0-1.238-1.044l-5.051-.734-2.259-4.577a1.534 1.534 0 0 0-2.752 0L7.365 5.847l-5.051.734A1.535 1.535 0 0 0 1.463 9.2l3.656 3.563-.863 5.031a1.532 1.532 0 0 0 2.226 1.616L11 17.033l4.518 2.375a1.534 1.534 0 0 0 2.226-1.617l-.863-5.03L20.537 9.2a1.523 1.523 0 0 0 .387-1.575Z" />
   </svg>
 }
@@ -22,14 +22,13 @@ function RemainingDot({ active }: { active?: boolean }) {
 function Alert({ label, visible }: { label: string, visible: boolean }) {
   return (
     <div className={twMerge(
-      "absolute left-0 right-0 bottom-0 top-0 transition duration-500",
+      "absolute left-0 right-0 bottom-0 top-0 transition duration-500 select-none",
       visible ? "opacity-100" : "opacity-0"
     )}>
       <div className='flex flex-col items-center'>
         <div className='text-sm bg-black px-2 py-1 rounded-sm text-white font-bold'>
           {label}
         </div>
-        {/* <div className="border-solid border-t-black border-t-4 border-x-4 border-x-transparent  border-b-0" /> */}
       </div>
     </div>
   )
@@ -99,7 +98,7 @@ export default function App() {
     </div>
   }
   return (
-    <div className="h-screen w-screen flex flex-col">
+    <div className="h-screen w-screen flex flex-col bg-[#6CACE4]">
       <InfoModal isOpen={isInfoOpen} handleClose={() => setIsInfoOpen(false)} />
       <EndScreenModal
         isOpen={isEndScreenOpen}
@@ -131,7 +130,7 @@ export default function App() {
         <div className="flex-1"></div>
         <div className='flex text-2xl sm:text-3xl font-montserrat select-none'>
           <div className="">Conexiones&nbsp;</div>
-          <div className='  font-bold text-[#6CACE4] rounded-sm'>Argentinas</div>
+          <div className='font-bold text-white rounded-sm'>Argentinas</div>
         </div>
         <div className="flex-1">
           <div className="flex justify-end mr-4">
@@ -143,7 +142,7 @@ export default function App() {
       </div>
       <div className="mt-4 flex justify-center items-center ">
         <div className='relative flex items-center gap-1'>
-          <span>
+          <span className='select-none'>
             Creá cuatro grupos de cuatro palabras!
           </span>
           {/* <div className='flex w-full justify-center -translate-x-2'> */}
@@ -171,7 +170,7 @@ export default function App() {
         </div>
       </div>
       <div className='mt-6 flex justify-center w-full gap-2 items-center'>
-        <div>Intentos restantes:</div>
+        <div className='select-none'>Intentos restantes</div>
         <div className='flex'>
           {Array.from(Array(noOfAttemptsRemainingDelayed)).map(_ => <RemainingDot active />)}
           {Array.from(Array(4 - noOfAttemptsRemainingDelayed)).map(_ => <RemainingDot />)}
@@ -180,12 +179,12 @@ export default function App() {
       <div className='mt-6 gap-x-4 flex justify-center'>
         {
           autoSolveEnded ? (
-            <Button label='Compartir' onClick={share} active filled timeoutAfterClick={100} />
+            <Button label='Compartir' onSubmit={share} active filled timeoutAfterClick={100} />
           ) : (
             <>
-              <Button label='Shuffle' onClick={shuffle} active timeoutAfterClick={100} />
-              <Button label='Deseleccionar' onClick={deselectAll} active={canDeselect} timeoutAfterClick={100} />
-              <Button label='Enviar' onClick={submit} active={canSubmit} filled timeoutAfterClick={2_500} />
+              <Button label='Shuffle' onSubmit={shuffle} active timeoutAfterClick={100} />
+              <Button label='Deseleccionar' onSubmit={deselectAll} active={canDeselect} timeoutAfterClick={100} />
+              <Button label='Enviar' onSubmit={submit} active={canSubmit} filled timeoutAfterClick={2_500} onClickInactive={() => triggerAlert("Seleccioná cuatro palabras", 0, 2_000)} />
             </>
           )
         }

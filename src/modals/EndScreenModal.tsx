@@ -44,7 +44,7 @@ export const EndScreenModal = ({ isOpen, handleClose, emojiRepresentation, gameW
           </div>
         </div>
 
-        <Button onClick={() => {
+        <Button onSubmit={() => {
           shareStatus(
             emojiRepresentation,
             onShare

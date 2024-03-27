@@ -35,7 +35,7 @@ export const InfoModal = ({ isOpen, handleClose }: Props) => {
         <p className='mt-4'>
           Ejemplo: grupo de palabras de insultos infantiles
         </p>
-        <div className="mt-4 grid grid-cols-4 gap-2 cursor-none">
+        <div className="mt-4 grid grid-cols-4 gap-2 cursor-none p-2 bg-[#6CACE4] rounded-md">
           <DemoTile word="Jacarandá" />
           <DemoTile word="Bobo" selected />
           <DemoTile word="Nacional" />
