@@ -57,6 +57,17 @@ export function useGameState({ groupings, shuffleInitial, oneAwayFn }: { groupin
       if (solutions.length === 4) {
         setGameWon(true)
       }
+
+      try {
+        console.log('event sent!')
+        if ((window as any).gtag as any) {
+          (window as any).gtag('event', 'game_result', {
+            'won': solutions.length === 4,
+            'num_solutions': solutions.length
+          })
+        }
+      }
+      catch {}
     }
   }, [gameEnded])
 
