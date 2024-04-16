@@ -20,7 +20,7 @@ export function SolutionRow({ height, solution }: { height?: number, solution?: 
       )}
       style={{ height: height, zIndex: 100, backgroundColor: color }}>
       <div className="flex flex-col h-full justify-center items-center uppercase">
-        <div className="font-bold">{solution?.group}</div>
+        <div className="text-center font-bold">{solution?.group}</div>
         <div>{solution?.words.join(', ')}</div>
       </div>
     </div>

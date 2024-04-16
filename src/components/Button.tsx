@@ -13,11 +13,13 @@ export function Button({ label, onSubmit, active, filled, timeoutAfterClick, onC
   }, [justClicked])
 
   function onClick() {
-    if (disabled) {
-      onClickInactive && onClickInactive()
+    if (!active && onClickInactive) {
+      onClickInactive()
+    } 
+    if(!disabled) {
+      setJustClicked(true)
+      onSubmit()
     }
-    setJustClicked(true)
-    onSubmit()
   }
 
   return <button

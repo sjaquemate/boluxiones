@@ -184,7 +184,7 @@ export default function App() {
             <>
               <Button label='Shuffle' onSubmit={shuffle} active timeoutAfterClick={100} />
               <Button label='Deseleccionar' onSubmit={deselectAll} active={canDeselect} timeoutAfterClick={100} />
-              <Button label='Enviar' onSubmit={submit} active={canSubmit} filled timeoutAfterClick={2_500} onClickInactive={() => triggerAlert("Seleccioná cuatro palabras", 0, 2_000)} />
+              <Button label='Enviar' onSubmit={submit} active={canSubmit} filled timeoutAfterClick={3_000} onClickInactive={() => triggerAlert("Seleccioná cuatro palabras", 0, 3_000)} />
             </>
           )
         }

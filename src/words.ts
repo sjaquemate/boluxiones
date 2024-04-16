@@ -45,24 +45,24 @@ type SheetRow = {
 
 export const emptyGrouping: Grouping[] = [
   {
-    group: "Equipos de futbol",
+    group: "",
     difficulty: 1,
-    words: ["1", "2", "3", "4"]
+    words: ["", "", "", ""]
   },
   {
-    group: "Sabores de alfajor",
+    group: "",
     difficulty: 2,
-    words: ["1", "2", "3", "4"]
+    words: ["", "", "", ""]
   },
   {
-    group: "Plazas y parques",
+    group: "",
     difficulty: 3,
-    words: ["1", "2", "3", "4"]
+    words: ["", "", "", ""]
   },
   {
-    group: "Radios",
+    group: "",
     difficulty: 4,
-    words: ["1", "2", "3", "4"]
+    words: ["", "", "", ""]
   }
 ]
 
